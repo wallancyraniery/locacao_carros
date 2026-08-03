@@ -1,49 +1,114 @@
 # Locação de carros
 
-Fundação de uma plataforma web responsiva para apresentar veículos destinados a motoristas de aplicativo em São José dos Campos. Neste checkpoint, a interface é estática e utiliza dados demonstrativos.
-
-## Estado atual
-
-A página inicial apresenta quatro veículos, seus estados, valores semanais e uma explicação do fluxo de interesse. Não há backend, autenticação, envio de formulários ou integração externa.
+Plataforma web responsiva para apresentar veículos destinados a motoristas de aplicativo em São José dos Campos. A versão atual combina a apresentação estática com uma fundação PostgreSQL portátil; os dados da interface continuam demonstrativos e ainda não são lidos do banco.
 
 ## Tecnologias
 
-Next.js (App Router), React, TypeScript estrito, Tailwind CSS, ESLint, Vitest e Testing Library.
+Next.js com App Router, React, TypeScript estrito, Tailwind CSS, PostgreSQL 17, Docker Compose, Drizzle ORM, Zod, Vitest e Testing Library.
 
-## Execução
+## Pré-requisitos
+
+- Node.js 22 ou superior e npm
+- Docker com Docker Compose
+- Porta TCP local `5433` disponível
+
+## Instalação
 
 ```bash
 npm install
-npm run dev
+cp .env.example .env
 ```
 
-Acesse `http://localhost:3000`. Demais verificações:
+Edite `.env` e defina uma senha exclusivamente local. O arquivo é ignorado pelo Git. `DATABASE_URL` fica reservada para a aplicação; `MIGRATION_DATABASE_URL` é usada somente pelo Drizzle Kit e pelas migrations.
+
+`POSTGRES_PORT=5433` configura exclusivamente a infraestrutura Docker local. O PostgreSQL continua escutando na porta `5432` dentro do container; somente a publicação em `127.0.0.1` utiliza `5433`, evitando conflito com outros serviços locais.
+
+## PostgreSQL local
+
+Inicie o serviço:
 
 ```bash
+docker compose up -d database
+docker compose ps
+docker compose exec database sh -c 'pg_isready -U "$POSTGRES_USER" -d "$POSTGRES_DB"'
+```
+
+Crie o banco separado para testes de forma idempotente, sem apagar o banco de desenvolvimento:
+
+```bash
+docker compose exec database sh -c 'psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" -tAc "SELECT 1 FROM pg_database WHERE datname='"'"'${POSTGRES_DB}_test'"'"'" | grep -q 1 || createdb -U "$POSTGRES_USER" "${POSTGRES_DB}_test"'
+```
+
+O comando consulta primeiro o catálogo do PostgreSQL. Se o banco já existir, ele não executa `createdb` novamente e preserva a estrutura e os dados existentes.
+
+O host publicado pelo Compose é limitado a `127.0.0.1`. Para encerrar sem apagar os dados:
+
+```bash
+docker compose down
+```
+
+Para remover também o volume:
+
+```bash
+docker compose down --volumes
+```
+
+**Atenção:** o último comando apaga permanentemente todos os dados locais mantidos no volume.
+
+## Migrations
+
+Os scripts usam o suporte nativo do Node.js para carregar `.env`, sem dependência adicional:
+
+```bash
+npm run db:generate
+npm run db:migrate
+npm run db:migrate:test
+```
+
+`db:migrate` usa somente `MIGRATION_DATABASE_URL`. `db:migrate:test` usa uma configuração independente que valida e usa somente `TEST_DATABASE_URL` como destino, sem alterar variáveis ou gerar arquivos. Antes de conectar, o comando exige host local explícito, nome terminado em `_test` e banco diferente dos destinos da aplicação e das migrations normais.
+
+Revise sempre o SQL gerado em `drizzle/` antes de aplicá-lo. Os dois comandos de aplicação são idempotentes: o Drizzle registra as migrations já executadas e não reaplica a mesma migration.
+
+## Desenvolvimento e validações
+
+```bash
+npm run dev
 npm run typecheck
 npm run lint
 npm test
 npm run build
 ```
 
-## Estrutura
+A aplicação fica disponível em `http://localhost:3000`.
 
-- `src/app`: entrada e metadados da aplicação
-- `src/components`: componentes compartilhados futuros
-- `src/config`: configurações de produto futuras
-- `src/modules/marketing`: composição da página inicial
-- `src/modules/vehicles`: dados, regras de apresentação e componentes de veículos
-- `src/styles`: tokens e estilos globais
-- `src/types`: contratos TypeScript
-- `tests`: testes automatizados
-- `public`: ativos públicos futuros
+Os testes PostgreSQL são separados dos testes rápidos e exigem `TEST_DATABASE_URL` apontando para `localhost`, `127.0.0.1` ou `::1`, com nome de banco terminado em `_test`:
 
-## Dados demonstrativos
+```bash
+npm run db:migrate:test
+npm run test:postgresql
+```
 
-Os veículos, estados e valores apresentados nesta versão são demonstrativos e estão sujeitos à confirmação. A interface não deve ser interpretada como uma proposta comercial ou disponibilidade real.
+Tanto a migration de testes quanto o executor de integração recusam URL ausente, protocolo incorreto, host remoto, banco sem o sufixo `_test`, mesmo nome do banco principal e URL igual a `DATABASE_URL` ou `MIGRATION_DATABASE_URL`. Nenhum desses comandos cria, apaga ou recria bancos, e nenhum imprime a URL completa ou suas credenciais.
 
-## Próximas etapas planejadas
+## Estrutura principal
 
-Após validação do produto: definição da identidade visual, fotografias próprias da frota, persistência de dados, autenticação, fluxo administrativo, análise de integrações e recursos de aplicação instalável.
+- `compose.yaml`: PostgreSQL local e volume persistente
+- `drizzle.config.ts`: configuração portátil do Drizzle Kit
+- `drizzle.test.config.ts`: destino protegido e exclusivo das migrations de testes
+- `drizzle/`: migrations SQL versionadas e metadados gerados
+- `src/config`: validação segura das variáveis de banco
+- `src/modules/database/schema`: enums, tabelas, constraints e índices
+- `src/modules/marketing`: apresentação visual
+- `src/modules/vehicles`: dados demonstrativos e componentes de veículos
+- `tests`: testes rápidos
+- `tests/postgresql`: testes de integração exclusivos do banco local
+
+## Decisões de modelagem
+
+Identificadores usam UUID gerado pelo PostgreSQL, valores monetários usam inteiros em centavos e datas persistidas usam `timestamptz`. As entidades operacionais carregam `organization_id`, preparando isolamento multilocadora sem antecipar abstrações desnecessárias. Exclusões que poderiam remover histórico são restringidas.
+
+## Limites atuais
+
+Não há conexão com banco hospedado, autenticação, membros de organização, RLS, armazenamento de arquivos, pagamentos ou painel administrativo. Essas decisões ficam para etapas futuras, após definição da autenticação. A interface permanece desacoplada do banco e seus veículos e valores são demonstrativos.
 
 Responsável pelo desenvolvimento: Wallancy Raniery.
