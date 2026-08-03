@@ -1,0 +1,12 @@
+import { VehicleList } from "@/modules/vehicles/components/vehicle_list";
+
+const steps = ["Escolha o veículo", "Envie seu interesse", "Aguarde a análise", "Retire após a aprovação"];
+
+export function HomePage() { return <>
+  <header className="site-header"><a className="wordmark" href="#inicio" aria-label="Início"><span aria-hidden="true">↗</span> Locação de veículos</a><nav aria-label="Navegação principal"><a href="#veiculos">Veículos</a><a href="#como-funciona">Como funciona</a></nav></header>
+  <main id="inicio">
+    <section className="hero"><div className="hero-copy"><p className="eyebrow">Mobilidade para quem faz a cidade acontecer</p><h1>Seu próximo carro para trabalhar começa aqui</h1><p className="lead">Encontre veículos para dirigir por aplicativo em São José dos Campos.</p><a className="button primary hero-button" href="#veiculos">Consultar veículos disponíveis</a><p className="microcopy">Disponibilidade e condições sujeitas à confirmação da locadora.</p></div><div className="hero-visual" aria-hidden="true"><span className="orb" /><span className="road-line" /><div className="hero-car"><span className="car-body" /><span className="wheel wheel-one" /><span className="wheel wheel-two" /></div></div></section>
+    <section className="section" id="veiculos"><div className="section-heading"><div><p className="eyebrow">Opções para conhecer</p><h2>Veículos em destaque</h2></div><p>Registros desta apresentação são demonstrativos e não representam disponibilidade real confirmada.</p></div><VehicleList /></section>
+    <section className="section process" id="como-funciona"><div className="section-heading"><div><p className="eyebrow">Jornada simples</p><h2>Como funciona</h2></div><p>A disponibilidade, as condições da locação e a aprovação dependem de análise e confirmação da locadora.</p></div><ol>{steps.map((step, index) => <li key={step}><span>{String(index + 1).padStart(2, "0")}</span><strong>{step}</strong></li>)}</ol></section>
+  </main><footer><p>Informações e valores demonstrativos, sujeitos à confirmação.</p><a href="#inicio">Voltar ao início ↑</a></footer>
+  </>; }
