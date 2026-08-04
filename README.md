@@ -71,6 +71,14 @@ Revise sempre o SQL gerado em `drizzle/` antes de aplicá-lo. Os dois comandos d
 
 ## Desenvolvimento e validações
 
+Sincronize explicitamente a organização interna e os quatro veículos demonstrativos no banco local:
+
+```bash
+npm run db:seed:development
+```
+
+O seed não é executado por build, migration ou inicialização. Ele aceita somente o host local e o banco indicado por `POSTGRES_DB`, utiliza UUIDs determinísticos e pode ser repetido sem duplicar registros. Não cria interessados fictícios nem apaga dados existentes.
+
 ```bash
 npm run dev
 npm run typecheck
@@ -80,6 +88,8 @@ npm run build
 ```
 
 A aplicação fica disponível em `http://localhost:3000`.
+
+Para testar o fluxo, abra a página inicial, escolha “Tenho interesse” em um veículo disponível, preencha dados fictícios e confirme o envio. A validação ocorre no servidor e somente o servidor define a organização, o veículo e o estado inicial `new`.
 
 Os testes PostgreSQL são separados dos testes rápidos e exigem `TEST_DATABASE_URL` apontando para `localhost`, `127.0.0.1` ou `::1`, com nome de banco terminado em `_test`:
 
@@ -109,6 +119,8 @@ Identificadores usam UUID gerado pelo PostgreSQL, valores monetários usam intei
 
 ## Limites atuais
 
-Não há conexão com banco hospedado, autenticação, membros de organização, RLS, armazenamento de arquivos, pagamentos ou painel administrativo. Essas decisões ficam para etapas futuras, após definição da autenticação. A interface permanece desacoplada do banco e seus veículos e valores são demonstrativos.
+Não há conexão com banco hospedado, autenticação, membros de organização, RLS, armazenamento de arquivos, pagamentos ou painel administrativo. Essas decisões ficam para etapas futuras, após definição da autenticação. Os veículos e valores permanecem demonstrativos.
+
+O formulário possui honeypot contra bots simples, mas **não deve ser disponibilizado publicamente** antes da implementação de rate limiting distribuído e CAPTCHA. Essas proteções, além de uma política de privacidade validada, são obrigatórias antes de uma publicação pública.
 
 Responsável pelo desenvolvimento: Wallancy Raniery.
