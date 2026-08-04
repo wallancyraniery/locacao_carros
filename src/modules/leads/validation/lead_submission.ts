@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { usagePurposes } from "@/modules/rentals/domain/rental_terms";
 
 const trimmedText = (label: string, minimum: number, maximum: number) => z.string()
   .trim()
@@ -16,11 +17,21 @@ export const leadSubmissionSchema = z.object({
   email: z.string().trim().max(160, "E-mail muito longo.").refine((value) => !value || z.email().safeParse(value).success, "Informe um e-mail válido.").transform((value) => value || null),
   city: trimmedText("Cidade", 2, 100),
   hasDefinitiveLicense: z.enum(["yes", "no"], { error: "Informe se possui CNH definitiva." }).transform((value) => value === "yes"),
+  usagePurpose: z.enum(usagePurposes, { error: "Informe a finalidade de uso do veículo." }),
+  hasEar: z.enum(["yes", "no", "not_applicable"], { error: "Informe sua situação em relação à EAR." }),
   driverPlatform: optionalText(80),
   preferredContactTime: optionalText(80),
+  eligibilityAcknowledgement: z.literal("accepted", { error: "Confirme que compreendeu os requisitos e a análise posterior." }),
   acknowledgement: z.literal("accepted", { error: "Confirme que compreendeu as condições do envio." }),
   website: z.string().max(0, "Envio inválido."),
-});
+}).superRefine((value, context) => {
+  if (value.usagePurpose === "professional_app" && value.hasEar === "not_applicable") {
+    context.addIssue({ code: "custom", path: ["hasEar"], message: "Informe se sua CNH possui EAR para atividade remunerada por aplicativo." });
+  }
+}).transform((value) => ({
+  ...value,
+  hasEar: value.hasEar === "not_applicable" ? null : value.hasEar === "yes",
+}));
 
 export type LeadSubmission = z.infer<typeof leadSubmissionSchema>;
 export type LeadSubmissionInput = z.input<typeof leadSubmissionSchema>;
