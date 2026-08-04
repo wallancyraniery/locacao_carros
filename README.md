@@ -69,6 +69,22 @@ npm run db:migrate:test
 
 Revise sempre o SQL gerado em `drizzle/` antes de aplicá-lo. Os dois comandos de aplicação são idempotentes: o Drizzle registra as migrations já executadas e não reaplica a mesma migration.
 
+## Supabase remoto
+
+O PostgreSQL em Docker continua sendo o ambiente principal de desenvolvimento. O Supabase é um destino PostgreSQL remoto futuro e utiliza exatamente as mesmas migrations versionadas; não existe um schema alternativo específico do provedor.
+
+Para preparar manualmente as ferramentas remotas, copie `.env.supabase.example` para `.env.supabase.local` e preencha o arquivo somente em sua máquina. Para migrations, são necessárias apenas `SUPABASE_PROJECT_REF`, `SUPABASE_MIGRATION_DATABASE_URL` e `SUPABASE_REMOTE_MIGRATION_CONFIRMATION`; as chaves da API não são lidas nem validadas. `drizzle.supabase.config.ts` usa exclusivamente os valores desse arquivo e ignora variáveis homônimas presentes em `process.env`, uma precedência intencional para reduzir o risco de aplicar migrations no projeto errado. Obtenha os dados necessários diretamente no painel do projeto, sem colocá-los em commits, relatórios ou mensagens. O arquivo local é ignorado pelo Git e não é carregado pela aplicação ou pelos comandos locais normais.
+
+Para migrations remotas é obrigatório usar o **Session pooler na porta 5432**, com banco `postgres`, SSL e usuário associado ao mesmo project ref. O Transaction pooler na porta 6543 é voltado a outro perfil de conexão e é recusado pelo fluxo de migrations, assim como localhost e a conexão direta `db.<project_ref>.supabase.co`.
+
+O arquivo local deve conter uma confirmação deliberada no formato `locacao_carros:<project_ref>`. Mesmo com essa confirmação, execute o comando abaixo somente após revisar o destino e receber autorização explícita:
+
+```bash
+npm run db:migrate:supabase
+```
+
+`SUPABASE_SECRET_KEY` é confidencial, fica reservada ao futuro adapter remoto da aplicação e não precisa ser preenchida até ele ser implementado. O contrato público rejeita explicitamente essa variável, que nunca pode ser exposta ao navegador, usada com prefixo `NEXT_PUBLIC` ou registrada em logs. Neste checkpoint nenhuma migration remota foi executada e o formulário continua conectado exclusivamente ao PostgreSQL local.
+
 ## Desenvolvimento e validações
 
 Sincronize explicitamente a organização interna e os quatro veículos demonstrativos no banco local:
@@ -105,6 +121,7 @@ Tanto a migration de testes quanto o executor de integração recusam URL ausent
 - `compose.yaml`: PostgreSQL local e volume persistente
 - `drizzle.config.ts`: configuração portátil do Drizzle Kit
 - `drizzle.test.config.ts`: destino protegido e exclusivo das migrations de testes
+- `drizzle.supabase.config.ts`: destino remoto isolado, carregado somente pelo comando explícito
 - `drizzle/`: migrations SQL versionadas e metadados gerados
 - `src/config`: validação segura das variáveis de banco
 - `src/modules/database/schema`: enums, tabelas, constraints e índices
