@@ -1,0 +1,6 @@
+[
+  { "id": "20000000-0000-4000-8000-000000000001", "brand": "Fiat", "model": "Uno Vivace", "displayName": "Fiat Uno Vivace", "version": null, "year": 2013, "color": "Branco", "weeklyPriceCents": 65000, "status": "available", "isConfirmed": true },
+  { "id": "20000000-0000-4000-8000-000000000002", "brand": "Renault", "model": "Kwid", "displayName": "Renault Kwid Zen", "version": "Zen", "year": 2022, "color": "Branco", "weeklyPriceCents": 69900, "status": "available", "isConfirmed": false },
+  { "id": "20000000-0000-4000-8000-000000000003", "brand": "Fiat", "model": "Mobi", "displayName": "Fiat Mobi Like", "version": "Like", "year": 2023, "color": "Prata", "weeklyPriceCents": 72900, "status": "rented", "isConfirmed": false },
+  { "id": "20000000-0000-4000-8000-000000000004", "brand": "Chevrolet", "model": "Onix", "displayName": "Chevrolet Onix", "version": null, "year": 2022, "color": "Cinza", "weeklyPriceCents": 78900, "status": "maintenance", "isConfirmed": false }
+]
