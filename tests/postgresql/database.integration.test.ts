@@ -24,8 +24,8 @@ describe("estrutura PostgreSQL", () => {
   });
 
   it("possui chaves estrangeiras, índices e constraints essenciais", async () => {
-    const constraints = await sql`select conname from pg_constraint where conname in ('vehicles_organization_id_fk','vehicles_weekly_price_cents_non_negative_check','vehicles_year_reasonable_check','rental_leads_organization_id_fk','rental_leads_vehicle_id_fk','lead_status_history_organization_id_fk','lead_status_history_rental_lead_id_fk')`;
-    expect(constraints).toHaveLength(7);
+    const constraints = await sql`select conname from pg_constraint where conname in ('vehicles_organization_id_fk','vehicles_weekly_price_cents_non_negative_check','vehicles_year_reasonable_check','rental_leads_organization_id_fk','rental_leads_vehicle_id_fk','rental_leads_usage_purpose_check','lead_status_history_organization_id_fk','lead_status_history_rental_lead_id_fk')`;
+    expect(constraints).toHaveLength(8);
     const indexes = await sql`select indexname from pg_indexes where schemaname = 'public' and indexname in ('vehicles_organization_status_idx','rental_leads_organization_status_idx','rental_leads_organization_created_at_idx','lead_status_history_rental_lead_created_at_idx')`;
     expect(indexes).toHaveLength(4);
   });

@@ -27,7 +27,7 @@ describe("captura de interesse no PostgreSQL", () => {
         return vehicle ? { id: vehicle.id, organizationId: vehicle.organization_id, displayName: "Veículo de teste" } : null;
       },
       async createLead(lead: NewLead) {
-        const [created] = await sql`insert into rental_leads (organization_id, vehicle_id, full_name, phone, email, city, has_definitive_license, driver_platform, preferred_contact_time, status) values (${lead.organizationId}, ${lead.vehicleId}, ${lead.fullName}, ${lead.phone}, ${lead.email}, ${lead.city}, ${lead.hasDefinitiveLicense}, ${lead.driverPlatform}, ${lead.preferredContactTime}, 'new') returning id`;
+        const [created] = await sql`insert into rental_leads (organization_id, vehicle_id, full_name, phone, email, city, has_definitive_license, usage_purpose, has_ear, driver_platform, preferred_contact_time, status) values (${lead.organizationId}, ${lead.vehicleId}, ${lead.fullName}, ${lead.phone}, ${lead.email}, ${lead.city}, ${lead.hasDefinitiveLicense}, ${lead.usagePurpose}, ${lead.hasEar}, ${lead.driverPlatform}, ${lead.preferredContactTime}, 'new') returning id`;
         return { id: created.id };
       },
     };
@@ -42,21 +42,21 @@ describe("captura de interesse no PostgreSQL", () => {
   });
 
   it("cria lead válido com status e organização definidos no servidor", async () => {
-    const result = await submitLead(repository, { vehicleId: availableVehicleId, fullName: "Pessoa Integração", phone: "(12) 99999-9999", email: "integration@example.test", city: "Cidade de Teste", hasDefinitiveLicense: "yes", driverPlatform: "", preferredContactTime: "", acknowledgement: "accepted", website: "" });
+    const result = await submitLead(repository, { vehicleId: availableVehicleId, fullName: "Pessoa Integração", phone: "(12) 99999-9999", email: "integration@example.test", city: "Cidade de Teste", hasDefinitiveLicense: "yes", usagePurpose: "professional_app", hasEar: "yes", driverPlatform: "", preferredContactTime: "", eligibilityAcknowledgement: "accepted", acknowledgement: "accepted", website: "" });
     expect(result.status).toBe("success");
     if (result.status !== "success") return;
-    const [lead] = await sql`select organization_id, vehicle_id, status from rental_leads where id = ${result.leadId}`;
-    expect(lead).toEqual({ organization_id: organizationId, vehicle_id: availableVehicleId, status: "new" });
+    const [lead] = await sql`select organization_id, vehicle_id, usage_purpose, has_ear, status from rental_leads where id = ${result.leadId}`;
+    expect(lead).toEqual({ organization_id: organizationId, vehicle_id: availableVehicleId, usage_purpose: "professional_app", has_ear: true, status: "new" });
   });
 
   it.each(["30000000-0000-4000-8000-000000000099", rentedVehicleId])("rejeita veículo inexistente ou indisponível", async (vehicleId) => {
-    const result = await submitLead(repository, { vehicleId, fullName: "Pessoa Integração", phone: "(12) 99999-9999", email: "integration@example.test", city: "Cidade de Teste", hasDefinitiveLicense: "yes", driverPlatform: "", preferredContactTime: "", acknowledgement: "accepted", website: "" });
+    const result = await submitLead(repository, { vehicleId, fullName: "Pessoa Integração", phone: "(12) 99999-9999", email: "integration@example.test", city: "Cidade de Teste", hasDefinitiveLicense: "yes", usagePurpose: "other", hasEar: "not_applicable", driverPlatform: "", preferredContactTime: "", eligibilityAcknowledgement: "accepted", acknowledgement: "accepted", website: "" });
     expect(result.status).toBe("unavailable");
   });
 
   it("não adiciona colunas para documentos ou dados financeiros", async () => {
     const columns = await sql`select column_name from information_schema.columns where table_name = 'rental_leads'`;
     const names = columns.map(({ column_name }) => column_name);
-    expect(names).not.toEqual(expect.arrayContaining(["cpf", "rg", "cnh_number", "card_number", "bank_account"]));
+    expect(names).not.toEqual(expect.arrayContaining(["cpf", "rg", "cnh_number", "cnh_image", "proof_of_address", "criminal_records", "card_number", "bank_account"]));
   });
 });

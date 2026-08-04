@@ -24,6 +24,8 @@ export async function submitLead(repository: LeadRepository, input: LeadSubmissi
     email: parsed.data.email,
     city: parsed.data.city,
     hasDefinitiveLicense: parsed.data.hasDefinitiveLicense,
+    usagePurpose: parsed.data.usagePurpose,
+    hasEar: parsed.data.hasEar,
     driverPlatform: parsed.data.driverPlatform,
     preferredContactTime: parsed.data.preferredContactTime,
   });

@@ -14,13 +14,14 @@ function safeDevelopmentUrl(environment) {
 }
 
 const vehicles = JSON.parse(await readFile(new URL("../src/modules/vehicles/data/demo_vehicles.json", import.meta.url), "utf8"));
+const rentalTerms = JSON.parse(await readFile(new URL("../src/modules/rentals/data/rental_terms.json", import.meta.url), "utf8"));
 const sql = postgres(safeDevelopmentUrl(process.env), { max: 1 });
 
 try {
   await sql.begin(async (transaction) => {
     await transaction`insert into organizations (id, name, slug) values (${organizationId}, 'Locadora demonstrativa', 'locadora_demonstrativa') on conflict (id) do update set name = excluded.name, slug = excluded.slug, updated_at = now()`;
     for (const vehicle of vehicles) {
-      await transaction`insert into vehicles (id, organization_id, brand, model, version, year, color, weekly_price_cents, status, is_demo) values (${vehicle.id}, ${organizationId}, ${vehicle.brand}, ${vehicle.model}, ${vehicle.version}, ${vehicle.year}, ${vehicle.color}, ${vehicle.weeklyPriceCents}, ${vehicle.status}, true) on conflict (id) do update set brand = excluded.brand, model = excluded.model, version = excluded.version, year = excluded.year, color = excluded.color, weekly_price_cents = excluded.weekly_price_cents, status = excluded.status, is_demo = true, updated_at = now() where vehicles.organization_id = excluded.organization_id and vehicles.is_demo = true`;
+      await transaction`insert into vehicles (id, organization_id, brand, model, version, year, color, weekly_price_cents, status, is_demo) values (${vehicle.id}, ${organizationId}, ${vehicle.brand}, ${vehicle.model}, ${vehicle.version}, ${vehicle.year}, ${vehicle.color}, ${rentalTerms.weeklyRentalCents}, ${vehicle.status}, true) on conflict (id) do update set brand = excluded.brand, model = excluded.model, version = excluded.version, year = excluded.year, color = excluded.color, weekly_price_cents = excluded.weekly_price_cents, status = excluded.status, is_demo = true, updated_at = now() where vehicles.organization_id = excluded.organization_id and vehicles.is_demo = true`;
     }
   });
   console.log("Dados demonstrativos locais sincronizados com segurança.");

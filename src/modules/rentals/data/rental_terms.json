@@ -1,0 +1,6 @@
+{
+  "weeklyRentalCents": 70000,
+  "securityDepositCents": 100000,
+  "securityDepositMaxInstallments": 5,
+  "securityDepositRefundMaxDays": 30
+}
