@@ -8,6 +8,7 @@ coverage/
 .env.*
 !.env.example
 !.env.supabase.example
+!.env.supabase.runtime.example
 /.env.supabase.local
 *.tsbuildinfo
 .DS_Store
