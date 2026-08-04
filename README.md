@@ -87,6 +87,23 @@ npm run db:migrate:supabase
 
 `SUPABASE_SECRET_KEY` é confidencial, fica reservada ao futuro adapter remoto da aplicação e não precisa ser preenchida até ele ser implementado. O contrato público rejeita explicitamente essa variável, que nunca pode ser exposta ao navegador, usada com prefixo `NEXT_PUBLIC` ou registrada em logs. Neste checkpoint nenhuma migration remota foi executada e o formulário continua conectado exclusivamente ao PostgreSQL local.
 
+## Runtime PostgreSQL futuro
+
+A hospedagem principal planejada é a Netlify Free, com Next.js em runtime Node.js serverless. O Vercel Hobby não foi escolhido para o produto comercial porque seu enquadramento de uso deve ser verificado separadamente antes de qualquer adoção comercial. Limites, elegibilidade e termos vigentes da Netlify também devem ser confirmados antes do deploy.
+
+O desenvolvimento e os testes continuam no PostgreSQL Docker. O runtime remoto usará Drizzle com Postgres.js e o **Transaction pooler na porta 6543**, com no máximo uma conexão por instância, `prepare: false` e TLS `verify-full`. A role prevista é `lead_intake_runtime`, sem privilégios administrativos ou `BYPASSRLS`. A CA oficial será fornecida em base64 por variável secreta do hosting, sem leitura de arquivo no ambiente serverless.
+
+Os contratos são independentes:
+
+- Docker local usa `DATABASE_URL` e suas variáveis locais;
+- testes locais usam `TEST_DATABASE_URL`;
+- migrations remotas usam exclusivamente `.env.supabase.local` e a credencial administrativa isolada;
+- runtime remoto usa `DATABASE_RUNTIME_PROVIDER` e somente variáveis `SUPABASE_RUNTIME_*` do arquivo de exemplo `.env.supabase.runtime.example`.
+
+A aplicação nunca deve reutilizar o usuário `postgres`, sua senha ou `SUPABASE_MIGRATION_DATABASE_URL` em runtime. Nenhuma dessas variáveis pode receber prefixo `NEXT_PUBLIC`, e nenhuma Supabase secret key participa da conexão PostgreSQL da aplicação. O cliente remoto é criado sob demanda, sem conexão durante importação ou build.
+
+O projeto Supabase atual será tratado como **staging** até o lançamento. A produção deverá usar outro projeto e credenciais próprias. Preview deployments nunca podem escrever automaticamente no banco produtivo: devem usar ambiente isolado ou permanecer sem escrita. Nenhum deploy público está autorizado antes de CAPTCHA, rate limiting distribuído e política de privacidade.
+
 ## Desenvolvimento e validações
 
 Sincronize explicitamente a organização interna e os quatro veículos demonstrativos no banco local:

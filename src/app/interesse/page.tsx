@@ -3,6 +3,8 @@ import Link from "next/link";
 import { LeadForm } from "@/modules/leads/components/lead_form";
 import { vehicles } from "@/modules/vehicles/data/vehicles";
 
+export const runtime = "nodejs";
+
 export default async function InterestPage({ searchParams }: { searchParams: Promise<{ vehicle?: string }> }) {
   const { vehicle: vehicleId } = await searchParams;
   const vehicle = vehicles.find((item) => item.id === vehicleId && item.status === "available");

@@ -1,12 +1,13 @@
 import "server-only";
 import { and, eq } from "drizzle-orm";
-import { database } from "@/modules/database/client.server";
+import { getDatabase } from "@/modules/database/client.server";
 import { organizations, rentalLeads, vehiclesTable } from "@/modules/database/schema";
 import { demoOrganizationId } from "@/modules/vehicles/data/vehicles";
 import type { LeadRepository, NewLead } from "../domain/lead_repository";
 
 export const drizzleLeadRepository: LeadRepository = {
   async findAvailableDemoVehicle(vehicleId) {
+    const database = getDatabase();
     const [vehicle] = await database.select({
       id: vehiclesTable.id,
       organizationId: vehiclesTable.organizationId,
@@ -24,6 +25,7 @@ export const drizzleLeadRepository: LeadRepository = {
   },
 
   async createLead(lead: NewLead) {
+    const database = getDatabase();
     const [created] = await database.insert(rentalLeads).values({ ...lead, status: "new" }).returning({ id: rentalLeads.id });
     return created;
   },
