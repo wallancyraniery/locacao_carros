@@ -17,6 +17,12 @@ describe("estrutura PostgreSQL", () => {
     expect(enums.map(({ typname }) => typname)).toEqual(["lead_status", "vehicle_status"]);
   });
 
+  it("mantém RLS habilitado nas quatro tabelas", async () => {
+    const tables = await sql`select relname, relrowsecurity from pg_class where relnamespace = 'public'::regnamespace and relname in ('organizations','vehicles','rental_leads','lead_status_history') order by relname`;
+    expect(tables).toHaveLength(4);
+    expect(tables.every(({ relrowsecurity }) => relrowsecurity)).toBe(true);
+  });
+
   it("possui chaves estrangeiras, índices e constraints essenciais", async () => {
     const constraints = await sql`select conname from pg_constraint where conname in ('vehicles_organization_id_fk','vehicles_weekly_price_cents_non_negative_check','vehicles_year_reasonable_check','rental_leads_organization_id_fk','rental_leads_vehicle_id_fk','lead_status_history_organization_id_fk','lead_status_history_rental_lead_id_fk')`;
     expect(constraints).toHaveLength(7);
