@@ -20,6 +20,14 @@ const migrationEnvironmentSchema = z.object({
 
 export type SupabasePublicEnvironment = z.infer<typeof publicEnvironmentSchema>;
 export type SupabaseMigrationEnvironment = z.infer<typeof migrationEnvironmentSchema>;
+export type SupabaseMigrationCredentials = {
+  host: string;
+  port: number;
+  user: string;
+  password: string;
+  database: string;
+  ssl: "require";
+};
 
 export class SupabaseEnvironmentError extends Error {
   readonly code = "UNSAFE_SUPABASE_ENVIRONMENT";
@@ -83,4 +91,20 @@ export function parseSupabaseMigrationEnvironment(environment: Record<string, st
   }
 
   return config;
+}
+
+export function createSupabaseMigrationCredentials(config: SupabaseMigrationEnvironment): SupabaseMigrationCredentials {
+  try {
+    const migrationUrl = new URL(config.SUPABASE_MIGRATION_DATABASE_URL);
+    return {
+      host: migrationUrl.hostname,
+      port: Number(migrationUrl.port),
+      user: decodeURIComponent(migrationUrl.username),
+      password: decodeURIComponent(migrationUrl.password),
+      database: decodeURIComponent(migrationUrl.pathname.slice(1)),
+      ssl: "require",
+    };
+  } catch {
+    throw new SupabaseEnvironmentError("não foi possível preparar credenciais de migration");
+  }
 }

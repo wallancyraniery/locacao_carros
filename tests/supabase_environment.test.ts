@@ -1,6 +1,8 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it, vi } from "vitest";
+import { interpretBackendSslObservation, interpretRequireModeTlsHandshake } from "@/config/supabase_connection_diagnostic";
 import {
+  createSupabaseMigrationCredentials,
   parseSupabaseMigrationEnvironment,
   parseSupabasePublicEnvironment,
   SupabaseEnvironmentError,
@@ -86,6 +88,99 @@ describe("contrato secreto do servidor", () => {
 });
 
 describe("contrato de migration do Supabase", () => {
+  it("aprova negociação TLS no modo require sem alegar verificação de identidade", () => {
+    expect(interpretRequireModeTlsHandshake(0, [
+      "CONNECTION ESTABLISHED",
+      "Protocol version: TLSv1.3",
+      "Ciphersuite: TLS_AES_256_GCM_SHA384",
+    ].join("\n"))).toEqual({
+      endpointTlsNegotiated: true,
+      protocolIdentified: true,
+      cipherIdentified: true,
+      certificateIdentityVerified: false,
+      certificateIdentityVerificationReason: "not_performed_in_require_mode",
+    });
+  });
+
+  it("recusa handshake sem protocolo ou sem cipher", () => {
+    const withoutProtocol = interpretRequireModeTlsHandshake(0, "CONNECTION ESTABLISHED\nCiphersuite: sintético");
+    const withoutCipher = interpretRequireModeTlsHandshake(0, "CONNECTION ESTABLISHED\nProtocol version: TLSv1.3");
+    expect(withoutProtocol.endpointTlsNegotiated).toBe(false);
+    expect(withoutProtocol.protocolIdentified).toBe(false);
+    expect(withoutCipher.endpointTlsNegotiated).toBe(false);
+    expect(withoutCipher.cipherIdentified).toBe(false);
+  });
+
+  it("não confunde falha de cadeia com falha de negociação no modo require", () => {
+    const result = interpretRequireModeTlsHandshake(0, [
+      "CONNECTION ESTABLISHED",
+      "Protocol version: TLSv1.3",
+      "Ciphersuite: TLS_AES_256_GCM_SHA384",
+      "Verification error: cadeia sintética não verificada",
+    ].join("\n"));
+    expect(result.endpointTlsNegotiated).toBe(true);
+    expect(result.certificateIdentityVerified).toBe(false);
+    expect(result.certificateIdentityVerificationReason).toBe("not_performed_in_require_mode");
+  });
+
+  it("trata pg_stat_ssl do Session pooler como observação não conclusiva", () => {
+    expect(interpretBackendSslObservation("aws-0-sa-east-1.pooler.supabase.com", false)).toEqual({
+      observed: false,
+      scope: "session_pooler_backend",
+      conclusiveForClientTls: false,
+    });
+  });
+
+  it("não confunde uma conexão direta com o Session pooler", () => {
+    expect(interpretBackendSslObservation(`db.${projectRef}.supabase.co`, false)).toEqual({
+      observed: false,
+      scope: "direct_backend",
+      conclusiveForClientTls: true,
+    });
+  });
+
+  it("transforma a URL validada em credenciais mínimas com SSL explícito", () => {
+    const encodedEnvironment = {
+      ...migrationEnvironment,
+      SUPABASE_MIGRATION_DATABASE_URL: `postgresql://postgres.${projectRef}:senha%40sintetica%3Asegura@aws-0-sa-east-1.pooler.supabase.com:5432/postgres?sslmode=require`,
+    };
+    const credentials = createSupabaseMigrationCredentials(parseSupabaseMigrationEnvironment(encodedEnvironment));
+
+    expect(credentials).toEqual({
+      host: "aws-0-sa-east-1.pooler.supabase.com",
+      port: 5432,
+      user: `postgres.${projectRef}`,
+      password: "senha@sintetica:segura",
+      database: "postgres",
+      ssl: "require",
+    });
+    expect(Object.keys(credentials).sort()).toEqual(["database", "host", "password", "port", "ssl", "user"]);
+  });
+
+  it.each(["false", "allow", "prefer", "disable"])('recusa sslmode="%s"', (sslmode) => {
+    expect(() => parseSupabaseMigrationEnvironment({
+      ...migrationEnvironment,
+      SUPABASE_MIGRATION_DATABASE_URL: migrationEnvironment.SUPABASE_MIGRATION_DATABASE_URL.replace("sslmode=require", `sslmode=${sslmode}`),
+    })).toThrow(/SSL/);
+  });
+
+  it("não expõe senha ou URL ao falhar na transformação", () => {
+    const secret = "senha_sintetica_que_nao_pode_vazar";
+    const invalidEnvironment = {
+      ...migrationEnvironment,
+      SUPABASE_MIGRATION_DATABASE_URL: `postgresql://postgres.${projectRef}:${secret}%ZZ@aws-0-sa-east-1.pooler.supabase.com:5432/postgres?sslmode=require`,
+    };
+
+    try {
+      createSupabaseMigrationCredentials(invalidEnvironment);
+      expect.fail("a transformação deveria falhar");
+    } catch (error) {
+      expect(String(error)).not.toContain(secret);
+      expect(String(error)).not.toContain("postgresql://");
+      expect(String(error)).toContain("não foi possível preparar credenciais");
+    }
+  });
+
   it("aceita configuração sem publishable key", () => {
     expect(parseSupabaseMigrationEnvironment(migrationEnvironment)).toEqual(migrationEnvironment);
   });
@@ -146,9 +241,29 @@ describe("contrato de migration do Supabase", () => {
   it("drizzle.supabase.config.ts utiliza somente o parser de migration", () => {
     const source = readFileSync("drizzle.supabase.config.ts", "utf8");
     expect(source).toContain("parseSupabaseMigrationEnvironment");
+    expect(source).toContain("createSupabaseMigrationCredentials");
+    expect(source).toContain("dbCredentials: credentials");
+    expect(source).not.toContain("dbCredentials: { url");
     expect(source).not.toContain("parseSupabasePublicEnvironment");
     expect(source).not.toContain("parseSupabaseServerEnvironment");
     expect(source).not.toContain("SUPABASE_PUBLISHABLE_KEY");
     expect(source).not.toContain("SUPABASE_SECRET_KEY");
+  });
+
+  it("o diagnóstico remoto contém somente consultas SELECT", () => {
+    const source = readFileSync("scripts/check_supabase_connection.ts", "utf8");
+    const environmentSource = readFileSync("src/config/supabase_environment.ts", "utf8");
+    expect(source).toContain("createSupabaseMigrationCredentials");
+    expect(environmentSource).toContain('ssl: "require"');
+    expect(source).toContain("max: 1");
+    expect(source).toContain("prepare: false");
+    expect(source).toContain("timeoutMs = 8_000");
+    expect(source).toContain('"-servername", host');
+    expect(source).not.toContain("-verify_hostname");
+    expect(source).not.toContain("-verify_return_error");
+    expect(source).toContain("backendSslObservation");
+    expect(source).toContain('certificateIdentityVerificationReason: "not_performed_in_require_mode"');
+    expect(source).not.toContain("SUPABASE_MIGRATION_DATABASE_URL");
+    expect(source).not.toMatch(/\b(CREATE|ALTER|DROP|INSERT|UPDATE|DELETE|TRUNCATE|GRANT|REVOKE)\b/i);
   });
 });
