@@ -104,6 +104,12 @@ A aplicação nunca deve reutilizar o usuário `postgres`, sua senha ou `SUPABAS
 
 O projeto Supabase atual será tratado como **staging** até o lançamento. A produção deverá usar outro projeto e credenciais próprias. Preview deployments nunca podem escrever automaticamente no banco produtivo: devem usar ambiente isolado ou permanecer sem escrita. Nenhum deploy público está autorizado antes de CAPTCHA, rate limiting distribuído e política de privacidade.
 
+## Integração contínua
+
+Pull Requests para `main` executam typecheck, lint, testes regulares, testes de integração PostgreSQL e build. O workflow aplica as migrations em bancos PostgreSQL 17 efêmeros com valores exclusivamente sintéticos, não acessa o Supabase e não realiza deploy.
+
+Para reproduzir localmente as mesmas validações, prepare os bancos principal e de testes conforme as seções anteriores e execute `npm run db:migrate`, `npm run db:migrate:test`, `npm run typecheck`, `npm run lint`, `npm test`, `npm run test:postgresql` e `npm run build`.
+
 ## Desenvolvimento e validações
 
 Sincronize explicitamente a organização interna e os quatro veículos demonstrativos no banco local:

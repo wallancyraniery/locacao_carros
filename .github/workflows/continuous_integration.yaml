@@ -1,0 +1,94 @@
+name: Continuous integration
+
+on:
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    name: Validate project
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      POSTGRES_DB: locacaocarros_ci
+      POSTGRES_USER: locacao_ci
+      POSTGRES_PASSWORD: synthetic_ci_password
+      DATABASE_URL: postgresql://locacao_ci:synthetic_ci_password@127.0.0.1:5432/locacaocarros_ci
+      MIGRATION_DATABASE_URL: postgresql://locacao_ci:synthetic_ci_password@127.0.0.1:5432/locacaocarros_ci
+      TEST_DATABASE_URL: postgresql://locacao_ci:synthetic_ci_password@127.0.0.1:5432/locacaocarros_ci_test
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_DB: locacaocarros_ci
+          POSTGRES_USER: locacao_ci
+          POSTGRES_PASSWORD: synthetic_ci_password
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U locacao_ci -d locacaocarros_ci"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+          --health-start-period 10s
+
+    steps:
+      - name: Checkout repository
+        # actions/checkout v7.0.1
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+
+      - name: Configure Node.js
+        # actions/setup-node v7.0.0
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Confirm PostgreSQL health
+        env:
+          POSTGRES_CONTAINER_ID: ${{ job.services.postgres.id }}
+        run: docker exec "$POSTGRES_CONTAINER_ID" pg_isready -U "$POSTGRES_USER" -d "$POSTGRES_DB"
+
+      - name: Create test database when absent
+        env:
+          POSTGRES_CONTAINER_ID: ${{ job.services.postgres.id }}
+        run: |
+          if ! docker exec "$POSTGRES_CONTAINER_ID" psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" -tAc "SELECT 1 FROM pg_database WHERE datname = 'locacaocarros_ci_test'" | grep -qx 1; then
+            docker exec "$POSTGRES_CONTAINER_ID" createdb -U "$POSTGRES_USER" locacaocarros_ci_test
+          fi
+
+      - name: Migrate main database
+        run: npm run db:migrate
+
+      - name: Migrate test database
+        run: npm run db:migrate:test
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Run unit tests
+        run: npm test
+
+      - name: Run PostgreSQL integration tests
+        run: npm run test:postgresql
+
+      - name: Build application
+        run: npm run build
+
+      - name: Reject unexpected tracked changes
+        run: git diff --exit-code
