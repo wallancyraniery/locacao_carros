@@ -9,9 +9,12 @@ export const vehicles: Vehicle[] = demoVehicles.map((vehicle) => ({
   model: vehicle.displayName,
   year: vehicle.year,
   color: vehicle.color,
+  transmission: vehicle.transmission as Vehicle["transmission"],
+  feature: vehicle.feature as Vehicle["feature"],
+  image: { src: vehicle.imageSrc, alt: vehicle.imageAlt },
   weeklyPrice: rentalTerms.weeklyRentalCents / 100,
-  status: vehicle.status as Vehicle["status"],
-  isConfirmed: vehicle.isConfirmed,
+  availabilityLabel: "Disponibilidade sob consulta",
+  acceptsInterest: true,
 }));
 
 export { demoVehicles };

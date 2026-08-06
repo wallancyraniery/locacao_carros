@@ -1,5 +1,6 @@
 import { readFile } from "node:fs/promises";
 import postgres from "postgres";
+import { validateSeedCatalog } from "./validate_seed_catalog.mjs";
 
 const organizationId = "10000000-0000-4000-8000-000000000001";
 const localHosts = new Set(["localhost", "127.0.0.1", "::1", "[::1]"]);
@@ -15,6 +16,14 @@ function safeDevelopmentUrl(environment) {
 
 const vehicles = JSON.parse(await readFile(new URL("../src/modules/vehicles/data/demo_vehicles.json", import.meta.url), "utf8"));
 const rentalTerms = JSON.parse(await readFile(new URL("../src/modules/rentals/data/rental_terms.json", import.meta.url), "utf8"));
+
+try {
+  validateSeedCatalog(vehicles);
+} catch (error) {
+  console.error(error instanceof Error ? error.message : "Seed recusado: catálogo inválido.");
+  process.exit(1);
+}
+
 const sql = postgres(safeDevelopmentUrl(process.env), { max: 1 });
 
 try {

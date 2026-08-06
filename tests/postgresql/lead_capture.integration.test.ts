@@ -1,4 +1,3 @@
-import { execFileSync } from "node:child_process";
 import postgres from "postgres";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { submitLead } from "@/modules/leads/application/submit_lead";
@@ -14,12 +13,19 @@ describe("captura de interesse no PostgreSQL", () => {
   let repository: LeadRepository;
   let seedReady = false;
 
-  beforeAll(() => {
-    const { testDatabaseUrl, testDatabaseName } = parseTestDatabaseEnvironment(process.env);
+  beforeAll(async () => {
+    const { testDatabaseUrl } = parseTestDatabaseEnvironment(process.env);
     sql = postgres(testDatabaseUrl, { max: 1 });
-    const seedEnvironment = { ...process.env, DATABASE_URL: testDatabaseUrl, POSTGRES_DB: testDatabaseName };
-    execFileSync(process.execPath, ["scripts/seed_development.mjs"], { cwd: process.cwd(), env: seedEnvironment, stdio: "ignore" });
-    execFileSync(process.execPath, ["scripts/seed_development.mjs"], { cwd: process.cwd(), env: seedEnvironment, stdio: "ignore" });
+    await sql`insert into organizations (id, name, slug) values (${organizationId}, 'Organização de teste', 'organizacao_de_teste') on conflict (id) do nothing`;
+    const fixtures = [
+      [availableVehicleId, "available"],
+      ["20000000-0000-4000-8000-000000000002", "available"],
+      [rentedVehicleId, "rented"],
+      ["20000000-0000-4000-8000-000000000004", "inactive"],
+    ] as const;
+    for (const [id, status] of fixtures) {
+      await sql`insert into vehicles (id, organization_id, brand, model, year, color, weekly_price_cents, status, is_demo) values (${id}, ${organizationId}, 'Marca de teste', 'Modelo de teste', 2020, 'Cor de teste', 70000, ${status}, true) on conflict (id) do nothing`;
+    }
     seedReady = true;
     repository = {
       async findAvailableDemoVehicle(vehicleId) {
@@ -32,9 +38,9 @@ describe("captura de interesse no PostgreSQL", () => {
       },
     };
   });
-  afterAll(async () => { if (sql) { if (seedReady) await sql`delete from rental_leads where email = 'integration@example.test'`; await sql.end(); } });
+  afterAll(async () => { if (sql) { if (seedReady) { await sql`delete from rental_leads where email = 'integration@example.test'`; await sql`delete from vehicles where organization_id = ${organizationId} and is_demo = true`; await sql`delete from organizations where id = ${organizationId}`; } await sql.end(); } });
 
-  it("mantém organização única e quatro veículos após duas execuções", async () => {
+  it("prepara uma organização e quatro fixtures persistíveis sem usar o seed do catálogo", async () => {
     const [organization] = await sql`select count(*)::int as count from organizations where id = ${organizationId}`;
     const [vehicles] = await sql`select count(*)::int as count from vehicles where organization_id = ${organizationId} and is_demo = true`;
     expect(organization.count).toBe(1);

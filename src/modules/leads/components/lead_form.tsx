@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, type FormEvent } from "react";
 import Link from "next/link";
 import { submitLeadAction } from "../actions/submit_lead_action";
 import { initialLeadFormState } from "./lead_form_state";
@@ -11,8 +11,12 @@ const ErrorMessage = ({ errors, field }: { errors?: Record<string, string[]>; fi
 export function LeadForm({ vehicleId, vehicleName }: { vehicleId: string; vehicleName: string }) {
   const [state, action, pending] = useActionState(submitLeadAction, initialLeadFormState);
   const described = (field: string) => state.errors?.[field] ? `${field}-error` : undefined;
+  const preventUnexpectedSubmit = (event: FormEvent<HTMLFormElement>) => {
+    const submitter = (event.nativeEvent as SubmitEvent).submitter;
+    if (!(submitter instanceof HTMLButtonElement) || submitter.dataset.intent !== "submit-interest") event.preventDefault();
+  };
   if (state.status === "success") return <div className="form-success" role="status"><h2>Recebemos seu interesse</h2><p>{state.message}</p><p>O envio não representa reserva, aprovação ou garantia de disponibilidade.</p><Link className="button secondary" href="/#veiculos">Voltar aos veículos</Link></div>;
-  return <form action={action} className="lead-form" noValidate>
+  return <form action={action} className="lead-form" noValidate onSubmit={preventUnexpectedSubmit}>
     <input type="hidden" name="vehicleId" value={vehicleId} />
     <div className="form-field"><label htmlFor="selectedVehicle">Veículo selecionado</label><input id="selectedVehicle" value={vehicleName} readOnly /></div>
     <div className="form-field"><label htmlFor="fullName">Nome completo</label><input id="fullName" name="fullName" autoComplete="name" defaultValue={state.values?.fullName} aria-invalid={!!state.errors?.fullName} aria-describedby={described("fullName")} /><ErrorMessage errors={state.errors} field="fullName" /></div>
@@ -28,6 +32,6 @@ export function LeadForm({ vehicleId, vehicleName }: { vehicleId: string; vehicl
     <label className="acknowledgement"><input type="checkbox" name="acknowledgement" value="accepted" defaultChecked={state.values?.acknowledgement === "accepted"} aria-describedby={described("acknowledgement")} /> <span>Estou ciente de que o envio não garante reserva, aprovação ou disponibilidade.</span></label><ErrorMessage errors={state.errors} field="acknowledgement" />
     <p className="privacy-note">Seus dados serão utilizados somente para analisar seu interesse na locação e realizar contato.</p>
     {state.message && <p className="form-message" role="alert">{state.message}</p>}
-    <button className="button primary submit-button" type="submit" disabled={pending}>{pending ? "Enviando..." : "Enviar interesse"}</button>
+    <button className="button primary submit-button" type="submit" data-intent="submit-interest" disabled={pending}>{pending ? "Enviando..." : "Enviar interesse"}</button>
   </form>;
 }

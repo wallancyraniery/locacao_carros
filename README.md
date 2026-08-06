@@ -130,6 +130,19 @@ npm run build
 
 A aplicação fica disponível em `http://localhost:3000`.
 
+### Teste em celular na rede local
+
+Para abrir a aplicação em um celular real durante o desenvolvimento, inicie o servidor aceitando conexões da rede local e consulte os endereços do computador:
+
+```bash
+npm run dev:network
+hostname -I
+```
+
+Com o celular e o computador conectados à mesma rede Wi-Fi, abra no celular o endereço IPv4 local exibido pelo segundo comando, normalmente no formato `http://192.168.x.x:3000`. Não coloque um IP fixo no código ou nesta documentação.
+
+`localhost` no celular aponta para o próprio celular, não para o computador. O comando `dev:network` serve exclusivamente para desenvolvimento dentro de uma rede local confiável: ele não é deploy e não deve ser exposto deliberadamente à internet. Não exiba credenciais no navegador ou no terminal ao realizar esse teste.
+
 Para testar o fluxo, abra a página inicial, escolha “Tenho interesse” em um veículo disponível, preencha dados fictícios e confirme o envio. A validação ocorre no servidor e somente o servidor define a organização, o veículo e o estado inicial `new`.
 
 Os testes PostgreSQL são separados dos testes rápidos e exigem `TEST_DATABASE_URL` apontando para `localhost`, `127.0.0.1` ou `::1`, com nome de banco terminado em `_test`:
