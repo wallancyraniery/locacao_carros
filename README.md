@@ -1,181 +1,151 @@
-# Locação de carros
+# Locação de Carros
 
-Plataforma web responsiva para apresentar veículos destinados a motoristas de aplicativo em São José dos Campos. A versão atual combina a apresentação estática com uma fundação PostgreSQL portátil; os dados da interface continuam demonstrativos e ainda não são lidos do banco.
+Aplicação web para apresentar veículos e registrar o interesse de motoristas em uma locação.
+
+O projeto foi desenvolvido como uma aplicação prática de engenharia de software, com foco em backend, banco de dados, validação no servidor, testes e organização de ambiente. A interface ainda trabalha com dados demonstrativos, mas o fluxo de interesse já possui persistência em PostgreSQL.
+
+## Estado atual
+
+O projeto está em desenvolvimento e ainda não representa um serviço comercial em produção.
+
+Hoje já existem catálogo e detalhes de veículos, formulário de interesse, validação com Zod, Server Actions, persistência com Drizzle ORM, migrations versionadas, seed de desenvolvimento, testes automatizados e integração contínua.
+
+Ainda não foram implementados autenticação, painel administrativo, pagamentos e publicação comercial. O formulário não deve ser disponibilizado para uso público real antes da inclusão das proteções contra abuso e da política de privacidade necessárias.
 
 ## Tecnologias
 
-Next.js com App Router, React, TypeScript estrito, Tailwind CSS, PostgreSQL 17, Docker Compose, Drizzle ORM, Zod, Vitest e Testing Library.
+| Área | Tecnologias |
+| --- | --- |
+| Aplicação | Next.js 16, React 19 e TypeScript |
+| Banco de dados | PostgreSQL 17 e Drizzle ORM |
+| Validação | Zod |
+| Ambiente | Docker Compose e Linux |
+| Testes | Vitest, Testing Library e testes de integração PostgreSQL |
+| Qualidade | ESLint, typecheck, migrations e GitHub Actions |
 
-## Pré-requisitos
+## Fluxo principal
 
-- Node.js 22 ou superior e npm
-- Docker com Docker Compose
-- Porta TCP local `5433` disponível
+O usuário escolhe um veículo, consulta seus detalhes e envia uma manifestação de interesse.
 
-## Instalação
+```text
+Interface
+   ↓
+Server Action
+   ↓
+Validação Zod
+   ↓
+Caso de uso
+   ↓
+Repository
+   ↓
+Drizzle ORM
+   ↓
+PostgreSQL
+```
+
+A organização, o veículo válido e o estado inicial do registro são definidos no servidor. O formulário possui um honeypot simples para reduzir envios automatizados e não coleta CPF, RG, número da CNH, documentos ou informações bancárias.
+
+## Decisões técnicas
+
+Os identificadores persistidos utilizam UUID. Valores monetários são armazenados em centavos e datas utilizam `timestamptz`.
+
+O projeto separa a conexão usada pela aplicação da conexão usada pelas migrations. O ambiente de testes também possui banco próprio e inclui proteções para recusar destinos remotos ou bancos que não tenham sido configurados especificamente para teste.
+
+Os dados de desenvolvimento usam identificadores determinísticos e podem ser sincronizados mais de uma vez sem criar registros duplicados.
+
+## Executando localmente
+
+É necessário ter Node.js 22 ou superior, npm e Docker com Docker Compose.
+
+Primeiro instale as dependências e prepare o arquivo local de ambiente:
 
 ```bash
 npm install
 cp .env.example .env
 ```
 
-Edite `.env` e defina uma senha exclusivamente local. O arquivo é ignorado pelo Git. `DATABASE_URL` fica reservada para a aplicação; `MIGRATION_DATABASE_URL` é usada somente pelo Drizzle Kit e pelas migrations.
+O arquivo `.env.example` contém apenas valores demonstrativos. Defina uma senha local no arquivo `.env` antes de iniciar o banco. O `.env` real não é versionado.
 
-`POSTGRES_PORT=5433` configura exclusivamente a infraestrutura Docker local. O PostgreSQL continua escutando na porta `5432` dentro do container; somente a publicação em `127.0.0.1` utiliza `5433`, evitando conflito com outros serviços locais.
-
-## PostgreSQL local
-
-Inicie o serviço:
+Inicie o PostgreSQL:
 
 ```bash
 docker compose up -d database
 docker compose ps
-docker compose exec database sh -c 'pg_isready -U "$POSTGRES_USER" -d "$POSTGRES_DB"'
 ```
 
-Crie o banco separado para testes de forma idempotente, sem apagar o banco de desenvolvimento:
+Aplique as migrations:
 
 ```bash
-docker compose exec database sh -c 'psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" -tAc "SELECT 1 FROM pg_database WHERE datname='"'"'${POSTGRES_DB}_test'"'"'" | grep -q 1 || createdb -U "$POSTGRES_USER" "${POSTGRES_DB}_test"'
-```
-
-O comando consulta primeiro o catálogo do PostgreSQL. Se o banco já existir, ele não executa `createdb` novamente e preserva a estrutura e os dados existentes.
-
-O host publicado pelo Compose é limitado a `127.0.0.1`. Para encerrar sem apagar os dados:
-
-```bash
-docker compose down
-```
-
-Para remover também o volume:
-
-```bash
-docker compose down --volumes
-```
-
-**Atenção:** o último comando apaga permanentemente todos os dados locais mantidos no volume.
-
-## Migrations
-
-Os scripts usam o suporte nativo do Node.js para carregar `.env`, sem dependência adicional:
-
-```bash
-npm run db:generate
 npm run db:migrate
-npm run db:migrate:test
 ```
 
-`db:migrate` usa somente `MIGRATION_DATABASE_URL`. `db:migrate:test` usa uma configuração independente que valida e usa somente `TEST_DATABASE_URL` como destino, sem alterar variáveis ou gerar arquivos. Antes de conectar, o comando exige host local explícito, nome terminado em `_test` e banco diferente dos destinos da aplicação e das migrations normais.
-
-Revise sempre o SQL gerado em `drizzle/` antes de aplicá-lo. Os dois comandos de aplicação são idempotentes: o Drizzle registra as migrations já executadas e não reaplica a mesma migration.
-
-## Supabase remoto
-
-O PostgreSQL em Docker continua sendo o ambiente principal de desenvolvimento. O Supabase é um destino PostgreSQL remoto futuro e utiliza exatamente as mesmas migrations versionadas; não existe um schema alternativo específico do provedor.
-
-Para preparar manualmente as ferramentas remotas, copie `.env.supabase.example` para `.env.supabase.local` e preencha o arquivo somente em sua máquina. Para migrations, são necessárias apenas `SUPABASE_PROJECT_REF`, `SUPABASE_MIGRATION_DATABASE_URL` e `SUPABASE_REMOTE_MIGRATION_CONFIRMATION`; as chaves da API não são lidas nem validadas. `drizzle.supabase.config.ts` usa exclusivamente os valores desse arquivo e ignora variáveis homônimas presentes em `process.env`, uma precedência intencional para reduzir o risco de aplicar migrations no projeto errado. Obtenha os dados necessários diretamente no painel do projeto, sem colocá-los em commits, relatórios ou mensagens. O arquivo local é ignorado pelo Git e não é carregado pela aplicação ou pelos comandos locais normais.
-
-Para migrations remotas é obrigatório usar o **Session pooler na porta 5432**, com banco `postgres`, `sslmode=require` na URI e usuário associado ao mesmo project ref. O cliente de diagnóstico e o Drizzle também aplicam `ssl: "require"` explicitamente. O Transaction pooler na porta 6543 é voltado a outro perfil de conexão e é recusado pelo fluxo de migrations, assim como localhost e a conexão direta `db.<project_ref>.supabase.co`.
-
-O arquivo local deve conter uma confirmação deliberada no formato `locacao_carros:<project_ref>`. Mesmo com essa confirmação, execute o comando abaixo somente após revisar o destino e receber autorização explícita:
-
-`npm run db:check:supabase` executa somente o diagnóstico de conexão e comprova a negociação STARTTLS antes de autenticar. No modo `require`, a conexão é criptografada, mas CA e hostname não são validados; portanto, esse handshake não comprova a identidade do endpoint e não equivale a `verify-full`. O SSL enforcement está ativado no servidor, e `verify-full` com certificado oficial continua obrigatório antes do deploy público. Atrás do Session pooler, `pg_stat_ssl` observa o trecho interno do backend e não comprova isoladamente o TLS entre cliente e pooler. Nunca execute uma migration antes de o diagnóstico confirmar o endpoint TLS; `db:migrate:supabase` continua sendo o único comando de migration remota.
-
-```bash
-npm run db:migrate:supabase
-```
-
-`SUPABASE_SECRET_KEY` é confidencial, fica reservada ao futuro adapter remoto da aplicação e não precisa ser preenchida até ele ser implementado. O contrato público rejeita explicitamente essa variável, que nunca pode ser exposta ao navegador, usada com prefixo `NEXT_PUBLIC` ou registrada em logs. Neste checkpoint nenhuma migration remota foi executada e o formulário continua conectado exclusivamente ao PostgreSQL local.
-
-## Runtime PostgreSQL futuro
-
-A hospedagem principal planejada é a Netlify Free, com Next.js em runtime Node.js serverless. O Vercel Hobby não foi escolhido para o produto comercial porque seu enquadramento de uso deve ser verificado separadamente antes de qualquer adoção comercial. Limites, elegibilidade e termos vigentes da Netlify também devem ser confirmados antes do deploy.
-
-O desenvolvimento e os testes continuam no PostgreSQL Docker. O runtime remoto usará Drizzle com Postgres.js e o **Transaction pooler na porta 6543**, com no máximo uma conexão por instância, `prepare: false` e TLS `verify-full`. A role prevista é `lead_intake_runtime`, sem privilégios administrativos ou `BYPASSRLS`. A CA oficial será fornecida em base64 por variável secreta do hosting, sem leitura de arquivo no ambiente serverless.
-
-Os contratos são independentes:
-
-- Docker local usa `DATABASE_URL` e suas variáveis locais;
-- testes locais usam `TEST_DATABASE_URL`;
-- migrations remotas usam exclusivamente `.env.supabase.local` e a credencial administrativa isolada;
-- runtime remoto usa `DATABASE_RUNTIME_PROVIDER` e somente variáveis `SUPABASE_RUNTIME_*` do arquivo de exemplo `.env.supabase.runtime.example`.
-
-A aplicação nunca deve reutilizar o usuário `postgres`, sua senha ou `SUPABASE_MIGRATION_DATABASE_URL` em runtime. Nenhuma dessas variáveis pode receber prefixo `NEXT_PUBLIC`, e nenhuma Supabase secret key participa da conexão PostgreSQL da aplicação. O cliente remoto é criado sob demanda, sem conexão durante importação ou build.
-
-O projeto Supabase atual será tratado como **staging** até o lançamento. A produção deverá usar outro projeto e credenciais próprias. Preview deployments nunca podem escrever automaticamente no banco produtivo: devem usar ambiente isolado ou permanecer sem escrita. Nenhum deploy público está autorizado antes de CAPTCHA, rate limiting distribuído e política de privacidade.
-
-## Integração contínua
-
-Pull Requests para `main` executam typecheck, lint, testes regulares, testes de integração PostgreSQL e build. O workflow aplica as migrations em bancos PostgreSQL 17 efêmeros com valores exclusivamente sintéticos, não acessa o Supabase e não realiza deploy.
-
-Para reproduzir localmente as mesmas validações, prepare os bancos principal e de testes conforme as seções anteriores e execute `npm run db:migrate`, `npm run db:migrate:test`, `npm run typecheck`, `npm run lint`, `npm test`, `npm run test:postgresql` e `npm run build`.
-
-## Desenvolvimento e validações
-
-Sincronize explicitamente a organização interna e os quatro veículos demonstrativos no banco local:
+Sincronize os dados demonstrativos:
 
 ```bash
 npm run db:seed:development
 ```
 
-O seed não é executado por build, migration ou inicialização. Ele aceita somente o host local e o banco indicado por `POSTGRES_DB`, utiliza UUIDs determinísticos e pode ser repetido sem duplicar registros. Não cria interessados fictícios nem apaga dados existentes.
+Inicie a aplicação:
 
 ```bash
 npm run dev
+```
+
+A aplicação ficará disponível em `http://localhost:3000`.
+
+## Validações
+
+As principais verificações do projeto podem ser executadas com:
+
+```bash
 npm run typecheck
 npm run lint
 npm test
+npm run test:postgresql
 npm run build
 ```
 
-A aplicação fica disponível em `http://localhost:3000`.
+Os testes de integração PostgreSQL utilizam um banco separado terminado em `_test`. A configuração recusa hosts remotos, destino igual ao banco principal e outras combinações consideradas inseguras para o ambiente de teste.
 
-### Teste em celular na rede local
+## Integração contínua
 
-Para abrir a aplicação em um celular real durante o desenvolvimento, inicie o servidor aceitando conexões da rede local e consulte os endereços do computador:
+Pull Requests direcionados à `main` executam automaticamente typecheck, lint, testes unitários, testes de integração PostgreSQL e build.
 
-```bash
-npm run dev:network
-hostname -I
+O workflow utiliza PostgreSQL 17 efêmero e credenciais sintéticas. Ele não acessa banco remoto e não realiza deploy.
+
+## Banco remoto
+
+O desenvolvimento continua utilizando PostgreSQL em Docker. Existe uma fundação preparada para utilização futura do Supabase como PostgreSQL hospedado, mantendo credenciais de migration e runtime separadas.
+
+Os arquivos `.env.supabase.example` e `.env.supabase.runtime.example` contêm somente exemplos fictícios. Credenciais reais permanecem fora do Git.
+
+Nenhuma migration remota é necessária para executar ou avaliar o projeto localmente.
+
+## Estrutura
+
+```text
+src/
+  app/
+  components/
+  config/
+  modules/
+    database/
+    leads/
+    marketing/
+    rentals/
+    vehicles/
+
+drizzle/
+tests/
+scripts/
 ```
 
-Com o celular e o computador conectados à mesma rede Wi-Fi, abra no celular o endereço IPv4 local exibido pelo segundo comando, normalmente no formato `http://192.168.x.x:3000`. Não coloque um IP fixo no código ou nesta documentação.
+A organização por módulos mantém regras de negócio, infraestrutura, validação e componentes separados sempre que o fluxo exige essa divisão.
 
-`localhost` no celular aponta para o próprio celular, não para o computador. O comando `dev:network` serve exclusivamente para desenvolvimento dentro de uma rede local confiável: ele não é deploy e não deve ser exposto deliberadamente à internet. Não exiba credenciais no navegador ou no terminal ao realizar esse teste.
+## Próximas etapas
 
-Para testar o fluxo, abra a página inicial, escolha “Tenho interesse” em um veículo disponível, preencha dados fictícios e confirme o envio. A validação ocorre no servidor e somente o servidor define a organização, o veículo e o estado inicial `new`.
+O próximo ciclo do projeto inclui a evolução da persistência dos veículos na interface, autenticação e painel administrativo. Uma eventual publicação comercial também exigirá proteção distribuída contra abuso, CAPTCHA, revisão da política de privacidade e configuração definitiva do ambiente remoto.
 
-Os testes PostgreSQL são separados dos testes rápidos e exigem `TEST_DATABASE_URL` apontando para `localhost`, `127.0.0.1` ou `::1`, com nome de banco terminado em `_test`:
+## Autor
 
-```bash
-npm run db:migrate:test
-npm run test:postgresql
-```
-
-Tanto a migration de testes quanto o executor de integração recusam URL ausente, protocolo incorreto, host remoto, banco sem o sufixo `_test`, mesmo nome do banco principal e URL igual a `DATABASE_URL` ou `MIGRATION_DATABASE_URL`. Nenhum desses comandos cria, apaga ou recria bancos, e nenhum imprime a URL completa ou suas credenciais.
-
-## Estrutura principal
-
-- `compose.yaml`: PostgreSQL local e volume persistente
-- `drizzle.config.ts`: configuração portátil do Drizzle Kit
-- `drizzle.test.config.ts`: destino protegido e exclusivo das migrations de testes
-- `drizzle.supabase.config.ts`: destino remoto isolado, carregado somente pelo comando explícito
-- `drizzle/`: migrations SQL versionadas e metadados gerados
-- `src/config`: validação segura das variáveis de banco
-- `src/modules/database/schema`: enums, tabelas, constraints e índices
-- `src/modules/marketing`: apresentação visual
-- `src/modules/vehicles`: dados demonstrativos e componentes de veículos
-- `tests`: testes rápidos
-- `tests/postgresql`: testes de integração exclusivos do banco local
-
-## Decisões de modelagem
-
-Identificadores usam UUID gerado pelo PostgreSQL, valores monetários usam inteiros em centavos e datas persistidas usam `timestamptz`. As entidades operacionais carregam `organization_id`, preparando isolamento multilocadora sem antecipar abstrações desnecessárias. Exclusões que poderiam remover histórico são restringidas.
-
-## Limites atuais
-
-Não há conexão com banco hospedado, autenticação, membros de organização, RLS, armazenamento de arquivos, pagamentos ou painel administrativo. Essas decisões ficam para etapas futuras, após definição da autenticação. Os veículos e valores permanecem demonstrativos.
-
-O formulário possui honeypot contra bots simples, mas **não deve ser disponibilizado publicamente** antes da implementação de rate limiting distribuído e CAPTCHA. Essas proteções, além de uma política de privacidade validada, são obrigatórias antes de uma publicação pública.
-
-Responsável pelo desenvolvimento: Wallancy Raniery.
+Wallancy Raniery
