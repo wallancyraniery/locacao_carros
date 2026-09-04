@@ -1,4 +1,5 @@
 import "server-only";
+import { randomUUID } from "node:crypto";
 import { and, eq } from "drizzle-orm";
 import { getDatabase } from "@/modules/database/client.server";
 import { organizations, rentalLeads, vehiclesTable } from "@/modules/database/schema";
@@ -11,9 +12,6 @@ export const drizzleLeadRepository: LeadRepository = {
     const [vehicle] = await database.select({
       id: vehiclesTable.id,
       organizationId: vehiclesTable.organizationId,
-      brand: vehiclesTable.brand,
-      model: vehiclesTable.model,
-      version: vehiclesTable.version,
     }).from(vehiclesTable).innerJoin(organizations, eq(organizations.id, vehiclesTable.organizationId)).where(and(
       eq(vehiclesTable.id, vehicleId),
       eq(vehiclesTable.organizationId, demoOrganizationId),
@@ -21,12 +19,13 @@ export const drizzleLeadRepository: LeadRepository = {
       eq(vehiclesTable.isDemo, true),
     )).limit(1);
     if (!vehicle) return null;
-    return { id: vehicle.id, organizationId: vehicle.organizationId, displayName: [vehicle.brand, vehicle.model, vehicle.version].filter(Boolean).join(" ") };
+    return vehicle;
   },
 
   async createLead(lead: NewLead) {
     const database = getDatabase();
-    const [created] = await database.insert(rentalLeads).values({ ...lead, status: "new" }).returning({ id: rentalLeads.id });
-    return created;
+    const id = randomUUID();
+    await database.insert(rentalLeads).values({ id, ...lead, status: "new" });
+    return { id };
   },
 };
