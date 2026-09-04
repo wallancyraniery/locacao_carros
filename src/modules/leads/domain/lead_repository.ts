@@ -1,4 +1,4 @@
-export type AvailableDemoVehicle = { id: string; organizationId: string; displayName: string };
+export type AvailableDemoVehicle = { id: string; organizationId: string };
 
 export type NewLead = {
   organizationId: string;
