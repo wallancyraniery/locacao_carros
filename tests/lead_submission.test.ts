@@ -23,7 +23,7 @@ const validInput = {
 
 function repository(): LeadRepository {
   return {
-    findAvailableDemoVehicle: vi.fn().mockResolvedValue({ id: validInput.vehicleId, organizationId: "10000000-0000-4000-8000-000000000001", displayName: "Fiat Uno Vivace" }),
+    findAvailableDemoVehicle: vi.fn().mockResolvedValue({ id: validInput.vehicleId, organizationId: "10000000-0000-4000-8000-000000000001" }),
     createLead: vi.fn().mockResolvedValue({ id: "30000000-0000-4000-8000-000000000001" }),
   };
 }

@@ -179,6 +179,8 @@ describe("configuração do cliente PostgreSQL de runtime", () => {
     expect(repositorySource).toContain("getDatabase()");
     expect(repositorySource.match(/\.limit\(1\)/g)).toHaveLength(1);
     expect(repositorySource).not.toMatch(/select\(\s*\)/);
+    expect(repositorySource).toContain("randomUUID()");
+    expect(repositorySource).not.toContain(".returning(");
     expect(actionSource).toContain("submitLead(drizzleLeadRepository");
     expect(pageSource).toContain('export const runtime = "nodejs"');
   });

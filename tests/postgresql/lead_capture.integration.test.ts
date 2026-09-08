@@ -30,7 +30,7 @@ describe("captura de interesse no PostgreSQL", () => {
     repository = {
       async findAvailableDemoVehicle(vehicleId) {
         const [vehicle] = await sql`select id, organization_id from vehicles where id = ${vehicleId} and organization_id = ${organizationId} and status = 'available' and is_demo = true`;
-        return vehicle ? { id: vehicle.id, organizationId: vehicle.organization_id, displayName: "Veículo de teste" } : null;
+        return vehicle ? { id: vehicle.id, organizationId: vehicle.organization_id } : null;
       },
       async createLead(lead: NewLead) {
         const [created] = await sql`insert into rental_leads (organization_id, vehicle_id, full_name, phone, email, city, has_definitive_license, usage_purpose, has_ear, driver_platform, preferred_contact_time, status) values (${lead.organizationId}, ${lead.vehicleId}, ${lead.fullName}, ${lead.phone}, ${lead.email}, ${lead.city}, ${lead.hasDefinitiveLicense}, ${lead.usagePurpose}, ${lead.hasEar}, ${lead.driverPlatform}, ${lead.preferredContactTime}, 'new') returning id`;
