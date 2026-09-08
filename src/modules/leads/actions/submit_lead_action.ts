@@ -3,6 +3,7 @@
 import { submitLead, type SubmitLeadResult } from "../application/submit_lead";
 import type { LeadFormState } from "../components/lead_form_state";
 import { drizzleLeadRepository } from "../infrastructure/drizzle_lead_repository.server";
+import { reportUnexpectedLeadSubmissionError } from "../infrastructure/lead_repository_diagnostic";
 import type { LeadSubmissionInput } from "../validation/lead_submission";
 
 export async function submitLeadAction(_state: LeadFormState, formData: FormData): Promise<LeadFormState> {
@@ -10,7 +11,8 @@ export async function submitLeadAction(_state: LeadFormState, formData: FormData
   let result: SubmitLeadResult;
   try {
     result = await submitLead(drizzleLeadRepository, values as LeadSubmissionInput);
-  } catch {
+  } catch (error) {
+    reportUnexpectedLeadSubmissionError(error);
     return { status: "error", message: "Não foi possível enviar seu interesse agora. Tente novamente mais tarde.", values };
   }
   if (result.status === "success" || result.status === "ignored") {

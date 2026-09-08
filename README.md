@@ -115,11 +115,23 @@ O workflow utiliza PostgreSQL 17 efêmero e credenciais sintéticas. Ele não ac
 
 ## Banco remoto
 
-O desenvolvimento continua utilizando PostgreSQL em Docker. Existe uma fundação preparada para utilização futura do Supabase como PostgreSQL hospedado, mantendo credenciais de migration e runtime separadas.
+O desenvolvimento local utiliza PostgreSQL em Docker. O fluxo de interesse também foi homologado no Supabase de testes: uma submissão sintética pelo navegador para o Ford Fiesta exibiu “Recebemos seu interesse” e persistiu exatamente um lead `new`, conferido administrativamente em modo somente leitura. Isso não representa publicação comercial ou produção.
 
 Os arquivos `.env.supabase.example` e `.env.supabase.runtime.example` contêm somente exemplos fictícios. Credenciais reais permanecem fora do Git.
 
 Nenhuma migration remota é necessária para executar ou avaliar o projeto localmente.
+
+Com a credencial runtime já provisionada no arquivo privado `.env.supabase.runtime.local` (modo `0600`), inicie a homologação com:
+
+```bash
+npm run dev:supabase
+```
+
+Esse comando carrega o arquivo no launcher e passa o ambiente ao Next sem `--env-file` ou `NODE_OPTIONS` herdado. Não use `npm run dev` para testar o Supabase: o comando comum usa o ambiente local. Encerre qualquer instância anterior deste projeto antes de iniciar outra.
+
+A fixture remota controlada contém somente a organização demonstrativa e o Ford Fiesta de UUID `20000000-0000-4000-8000-000000000003`. O comando `db:provision:supabase:lead-flow-fixture` é separado de migrations e do seed local; não precisa ser repetido para testar o formulário. Nunca execute `db:seed:development` no Supabase.
+
+`npm run db:check:supabase:runtime` confirma acesso seguro pelo Transaction Pooler 6543, TLS com CA explícita e recusa de leitura de leads pela runtime. Seu escopo é somente leitura: observar um veículo disponível não comprova uma submissão. Consulte [o contrato de acesso e a evidência de homologação](docs/runtime_database_access.md).
 
 ## Estrutura
 
@@ -144,7 +156,7 @@ A organização por módulos mantém regras de negócio, infraestrutura, valida�
 
 ## Próximas etapas
 
-O próximo ciclo do projeto inclui a evolução da persistência dos veículos na interface, autenticação e painel administrativo. Uma eventual publicação comercial também exigirá proteção distribuída contra abuso, CAPTCHA, revisão da política de privacidade e configuração definitiva do ambiente remoto.
+O próximo ciclo deve alinhar o catálogo demonstrativo à disponibilidade consultada no banco e preparar proteção contra abuso, privacidade e operação antes de uso público. CAPTCHA só deve ser incluído se necessário. Autenticação, painel administrativo e pagamentos pertencem a uma fase posterior, caso o processo humano de análise passe a exigir essas funcionalidades.
 
 ## Autor
 

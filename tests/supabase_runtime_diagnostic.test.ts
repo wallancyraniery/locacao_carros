@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { readFileSync } from "node:fs";
 import {
   expectedRuntimeMembership,
   expectedRuntimeColumnPrivileges,
@@ -8,6 +9,14 @@ import {
 } from "@/config/supabase_runtime_diagnostic";
 
 describe("diagnóstico Supabase do runtime", () => {
+  it("declara escopo somente leitura sem alegar prova do formulário", () => {
+    const source = readFileSync("scripts/check_supabase_runtime.ts", "utf8");
+    expect(source).toContain('scope: "runtime_access_read_only"');
+    expect(source).toContain("availableVehicleObserved");
+    expect(source).not.toContain("formOperationProven");
+    expect(source).toContain('default_transaction_read_only: true');
+  });
+
   it("aceita somente a exceção administrativa comprovada", () => {
     expect(hasExactRuntimeMemberships([{ ...expectedRuntimeMembership }])).toBe(true);
     expect(hasExactRuntimeMemberships([])).toBe(false);

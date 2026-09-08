@@ -18,6 +18,7 @@ it("valida a conexão exclusiva do runtime Supabase sem escrever dados", async (
   let sql: ReturnType<typeof postgres> | undefined;
   let connectionClosed = true;
   const diagnostic = {
+    scope: "runtime_access_read_only",
     runtimeCredentialOnly: false,
     transactionPooler6543: false,
     tlsIdentityVerified: false,
@@ -30,7 +31,6 @@ it("valida a conexão exclusiva do runtime Supabase sem escrever dados", async (
     vehicleQueryAllowed: false,
     availableVehicleObserved: false,
     rentalLeadsReadDenied: false,
-    formOperationProven: false,
     connectionClosed: true,
     failureStage: null as string | null,
     failureCode: null as string | null,
@@ -160,7 +160,6 @@ it("valida a conexão exclusiva do runtime Supabase sem escrever dados", async (
       FROM public.vehicles LIMIT 1`;
     diagnostic.vehicleQueryAllowed = true;
     diagnostic.availableVehicleObserved = vehicles.length === 1;
-    diagnostic.formOperationProven = vehicles.length === 1;
     await sql.unsafe("COMMIT");
 
     stage = "rental_leads_denial";

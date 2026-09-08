@@ -18,7 +18,7 @@ Gere uma senha aleatória no gerenciador de senhas e use `npm run db:provision:s
 
 Armazene a credencial somente no gerenciador de segredos do ambiente de hosting. Nunca utilize `service_role`, `postgres` ou a credencial de migration como credencial do runtime.
 
-O Transaction Pooler e o login remoto ainda não foram comprovados. A URL correspondente só deve ser montada no gerenciador de segredos depois da validação controlada e nunca deve ser registrada no repositório.
+O login remoto e o Transaction Pooler 6543 foram comprovados no projeto exclusivo de testes `avglmahriseqpoysdmom`, região `sa-east-1`. O cliente usa TLS `verify-full`, CA explícita e verificação do hostname. A credencial permanece no arquivo privado local; URLs e certificados não são registrados no repositório.
 
 ## Rotação e revogação
 
@@ -53,8 +53,22 @@ Cada operação possui uma policy permissiva mínima e uma guarda `AS RESTRICTIV
 
 O UUID é gerado pelo servidor antes do insert. Isso preserva o identificador retornado pelo repository sem conceder `SELECT` sobre `rental_leads`, privilégio necessário para `INSERT ... RETURNING id`.
 
+O repository usa `database.execute(sql...)` do Drizzle com valores parametrizados e lista explícita das 13 colunas autorizadas. O builder `insert(rentalLeads)` do schema completo incluía também `created_at` e `updated_at` com `DEFAULT`, colunas fora do grant runtime. Os timestamps agora são omitidos do INSERT e preenchidos pelos defaults do PostgreSQL. Não houve alteração de grants, RLS ou migrations.
+
 ## Validação antes de dados reais
 
-Com a credencial runtime no ambiente de homologação, execute `npm run db:check:supabase:runtime`. Esse diagnóstico conecta diretamente como `lead_intake_runtime` pelo Transaction Pooler, exige TLS com verificação de identidade e executa apenas leituras. Ele valida identidade, atributos, ownership, membership administrativo exato, grants e policies; consulta no máximo um veículo permitido e confirma que a leitura de `rental_leads` é recusada. Um resultado sem veículos confirma a conexão e a restrição de acesso, mas não comprova o funcionamento do formulário com um veículo disponível.
+Com a credencial runtime no ambiente de homologação, execute `npm run db:check:supabase:runtime`. Esse diagnóstico conecta diretamente como `lead_intake_runtime` pelo Transaction Pooler, exige TLS com verificação de identidade e executa apenas leituras. Ele valida identidade, atributos, ownership, membership administrativo exato, grants e policies; consulta no máximo um veículo permitido e confirma que a leitura de `rental_leads` é recusada. O campo `scope=runtime_access_read_only` delimita a evidência: `availableVehicleObserved` comprova somente visibilidade de um veículo. A antiga flag `formOperationProven` foi removida; nenhuma observação desse diagnóstico comprova envio ou persistência do formulário.
+
+## Checkpoint funcional de homologação
+
+Em 8 de setembro de 2026, o Next iniciado por `npm run dev:supabase` recebeu uma única submissão sintética pelo navegador na página `/interesse?vehicle=20000000-0000-4000-8000-000000000003`. A interface exibiu “Recebemos seu interesse”. Uma transação administrativa somente leitura confirmou um registro com o marcador exclusivo, organização e veículo corretos, status `new`, valores sintéticos esperados e timestamps preenchidos. Não houve duplicação. A fixture foi preservada.
+
+Após a persistência, o diagnóstico runtime passou com todas as garantias de acesso, `availableVehicleObserved=true`, `rentalLeadsReadDenied=true` e conexão fechada. RLS, grants, roles, migrations e TLS permaneceram inalterados. O teste remoto tem limite de 60 segundos para permitir as consultas e o fechamento da conexão; o limite padrão de cinco segundos do executor era insuficiente em uma execução.
+
+Essa evidência abrange UI → Server Action → Zod → caso de uso → repository real → Drizzle → runtime Supabase. O diagnóstico anterior de rollback usava um schema Drizzle reduzido sem timestamps; por isso, não cobria o SQL produzido pelo repository original. Os testes locais agora exercitam o repository real e verificam sua lista de colunas.
+
+Erros inesperados mantêm a mensagem pública genérica. O servidor registra somente `{ stage, code }`, inclusive códigos permitidos encontrados em `error.cause`; nunca registra mensagem interna, query, parâmetros, FormData ou stack. Os estágios são `runtime_client_initialization`, `find_available_demo_vehicle`, `create_lead` e `submit_lead`.
+
+Para repetir uma homologação, autorize uma nova submissão sintética com marcador exclusivo, confirme-a administrativamente em modo somente leitura e verifique novamente a recusa de SELECT pela runtime. Não use a credencial administrativa na aplicação.
 
 Disponibilidade é verificada no momento da manifestação de interesse. O envio não reserva o veículo e a disponibilidade final depende de confirmação humana. Operação atômica e locking só serão introduzidos se o produto passar a efetuar reservas reais.

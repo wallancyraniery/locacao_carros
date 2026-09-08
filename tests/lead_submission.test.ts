@@ -1,9 +1,14 @@
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { submitLead } from "@/modules/leads/application/submit_lead";
 import { submitLeadAction } from "@/modules/leads/actions/submit_lead_action";
 import type { LeadRepository } from "@/modules/leads/domain/lead_repository";
+import { LeadRepositoryDiagnosticError } from "@/modules/leads/infrastructure/lead_repository_diagnostic";
 
-vi.mock("@/modules/leads/infrastructure/drizzle_lead_repository.server", () => ({ drizzleLeadRepository: {} }));
+const drizzleRepository = vi.hoisted(() => ({
+  findAvailableDemoVehicle: vi.fn(),
+  createLead: vi.fn(),
+}));
+vi.mock("@/modules/leads/infrastructure/drizzle_lead_repository.server", () => ({ drizzleLeadRepository: drizzleRepository }));
 
 const validInput = {
   vehicleId: "20000000-0000-4000-8000-000000000001",
@@ -28,7 +33,21 @@ function repository(): LeadRepository {
   };
 }
 
+function formDataFromValidInput() {
+  const formData = new FormData();
+  Object.entries(validInput).forEach(([field, value]) => formData.set(field, value));
+  return formData;
+}
+
 describe("envio de interesse", () => {
+  beforeEach(() => {
+    drizzleRepository.findAvailableDemoVehicle.mockReset().mockResolvedValue({
+      id: validInput.vehicleId,
+      organizationId: "10000000-0000-4000-8000-000000000001",
+    });
+    drizzleRepository.createLead.mockReset().mockResolvedValue({ id: "30000000-0000-4000-8000-000000000001" });
+  });
+
   it("valida, normaliza e envia dados válidos", async () => {
     const adapter = repository();
     expect(await submitLead(adapter, validInput)).toMatchObject({ status: "success" });
@@ -80,6 +99,47 @@ describe("envio de interesse", () => {
       status: "error",
       values: expect.objectContaining({ usagePurpose: "professional_app", hasEar: "yes", phone: validInput.phone }),
     });
+  });
+
+  it.each([
+    ["find_available_demo_vehicle", "08006", "lookup"],
+    ["create_lead", "42501", "insert"],
+  ] as const)("registra somente estágio e código seguros em falha de %s", async (stage, code, operation) => {
+    const privateValues = [
+      validInput.fullName,
+      validInput.fullName.trim(),
+      validInput.phone,
+      validInput.email,
+      validInput.city,
+      validInput.driverPlatform,
+      validInput.preferredContactTime,
+    ];
+    const failure = new LeadRepositoryDiagnosticError({ stage, code });
+    if (operation === "lookup") drizzleRepository.findAvailableDemoVehicle.mockRejectedValueOnce(failure);
+    else drizzleRepository.createLead.mockRejectedValueOnce(failure);
+    const consoleError = vi.spyOn(console, "error").mockImplementation(() => undefined);
+
+    const result = await submitLeadAction({ status: "idle" }, formDataFromValidInput());
+
+    expect(result).toMatchObject({
+      status: "error",
+      message: "Não foi possível enviar seu interesse agora. Tente novamente mais tarde.",
+    });
+    expect(consoleError).toHaveBeenCalledWith({ stage, code });
+    const diagnostic = JSON.stringify(consoleError.mock.calls);
+    for (const privateValue of privateValues) expect(diagnostic).not.toContain(privateValue);
+    consoleError.mockRestore();
+  });
+
+  it("preserva o fluxo de sucesso da Server Action sem diagnóstico de erro", async () => {
+    const consoleError = vi.spyOn(console, "error").mockImplementation(() => undefined);
+
+    await expect(submitLeadAction({ status: "idle" }, formDataFromValidInput())).resolves.toEqual({
+      status: "success",
+      message: "Interesse enviado com sucesso. A locadora analisará seus dados e entrará em contato.",
+    });
+    expect(consoleError).not.toHaveBeenCalled();
+    consoleError.mockRestore();
   });
 
   it("traduz veículo indisponível sem revelar detalhes internos", async () => {
