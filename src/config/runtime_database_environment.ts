@@ -52,15 +52,24 @@ function decodeCertificate(value: string): string {
     return fail("SUPABASE_RUNTIME_SSL_CA_BASE64 inválida");
   }
 
-  const decoded = Buffer.from(value, "base64").toString("utf8").trim();
-  const normalizedInput = value.replace(/=+$/, "");
-  const normalizedRoundTrip = Buffer.from(decoded, "utf8").toString("base64").replace(/=+$/, "");
-  if (normalizedInput !== normalizedRoundTrip) fail("SUPABASE_RUNTIME_SSL_CA_BASE64 inválida");
+  const decodedBytes = Buffer.from(value, "base64");
+  if (decodedBytes.toString("base64") !== value) fail("SUPABASE_RUNTIME_SSL_CA_BASE64 inválida");
+  const decoded = decodedBytes.toString("utf8").trim();
 
   const beginCount = decoded.match(/-----BEGIN CERTIFICATE-----/g)?.length ?? 0;
   const endCount = decoded.match(/-----END CERTIFICATE-----/g)?.length ?? 0;
-  const pemPattern = /^-----BEGIN CERTIFICATE-----\r?\n(?:[A-Za-z0-9+/]{16,64}\r?\n)+-----END CERTIFICATE-----$/;
-  if (beginCount !== 1 || endCount !== 1 || !pemPattern.test(decoded)) {
+  const pem = decoded.match(/^-----BEGIN CERTIFICATE-----\r?\n([\s\S]+)\r?\n-----END CERTIFICATE-----$/);
+  const bodyLines = pem?.[1].split(/\r?\n/) ?? [];
+  const finalLine = bodyLines.at(-1) ?? "";
+  const completeLinesAreValid = bodyLines.slice(0, -1).every((line) => /^[A-Za-z0-9+/]{64}$/.test(line));
+  const finalLineShapeIsValid = finalLine.length >= 4
+    && finalLine.length <= 64
+    && /^[A-Za-z0-9+/]+={0,2}$/.test(finalLine);
+  const certificateBody = bodyLines.join("");
+  const certificateBodyIsCanonical = certificateBody.length > 0
+    && Buffer.from(certificateBody, "base64").toString("base64") === certificateBody;
+  if (beginCount !== 1 || endCount !== 1 || !pem || !completeLinesAreValid
+    || !finalLineShapeIsValid || !certificateBodyIsCanonical) {
     fail("SUPABASE_RUNTIME_SSL_CA_BASE64 deve conter um único certificado PEM");
   }
   return `${decoded}\n`;
