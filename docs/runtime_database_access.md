@@ -1,18 +1,20 @@
 # Acesso do runtime ao banco
 
-O formulário usa uma conexão PostgreSQL server-side com a role `lead_intake_runtime`. A migration cria essa role como `NOLOGIN`, sem privilégios administrativos, memberships, propriedade de tabelas ou capacidade de ignorar RLS.
+O formulário usa uma conexão PostgreSQL server-side com a role `lead_intake_runtime`. A migration cria essa role como `NOLOGIN`, sem privilégios administrativos, propriedade de tabelas ou capacidade de ignorar RLS.
+
+No projeto de testes em PostgreSQL 17, a criação por uma role não-superuser com `CREATEROLE` produziu o vínculo administrativo automático esperado: `postgres` é membro de `lead_intake_runtime`, concedido por `supabase_admin`, com `ADMIN=true`, `INHERIT=false` e `SET=false`. Esse vínculo permite que `postgres` administre a role criada, mas não permite que `lead_intake_runtime` assuma `postgres`; também não concede a `postgres` herança ou `SET ROLE` para os privilégios da runtime. A auditoria deve aceitar somente esse vínculo exato. Qualquer outro membership, em qualquer direção, exige interrupção e investigação explícita.
 
 ## Pré-requisitos da homologação
 
 Antes de qualquer escrita remota, confirme por duas evidências independentes o identificador do projeto de homologação e interrompa o procedimento se projeto, role, ownership, memberships, grants ou policies divergirem do esperado. A migration deve usar exclusivamente a credencial administrativa de migration; o runtime deve receber outra credencial, exclusiva da role `lead_intake_runtime`.
 
-A migration falha de forma fechada se a role preexistente possuir membros ou pertencer direta ou indiretamente a outras roles. Esse estado é considerado contaminado e exige investigação manual; memberships desconhecidos nunca devem ser revogados automaticamente apenas para permitir a aplicação.
+A migration falha de forma fechada se a role preexistente possuir membros ou pertencer direta ou indiretamente a outras roles. Esse estado é considerado contaminado e exige investigação manual; memberships desconhecidos nunca devem ser revogados automaticamente apenas para permitir a aplicação. Após a criação, a exceção administrativa automática descrita acima deve ser verificada exatamente, sem ampliar a lista de memberships aceitos.
 
 ## Provisionamento da credencial
 
 A migration mantém a role como `NOLOGIN` e não contém senha. Somente depois de aplicar e auditar as migrations no projeto de homologação identificado, revise novamente atributos, ausência de ownership e memberships antes de habilitar o login.
 
-Gere uma senha aleatória no gerenciador de segredos e use entrada interativa, como `\password lead_intake_runtime` em uma sessão administrativa protegida, ou mecanismo equivalente que não registre o valor em Git, argumentos de terminal, histórico do shell ou histórico do SQL Editor. Não escreva a senha diretamente em um comando salvo ou painel com histórico de consultas.
+Gere uma senha aleatória no gerenciador de senhas e use `npm run db:provision:supabase:runtime -- /caminho/para/prod-supabase.cer`. O script exige terminal interativo, lê e confirma a senha sem eco, deriva localmente o verificador SCRAM e envia somente esse verificador ao banco. A senha não aparece em argumentos, Git, logs, histórico do shell ou texto SQL. A configuração exclusiva é criada como `.env.supabase.runtime.local`, já ignorada pelo Git, com permissão `0600`; um arquivo existente não é sobrescrito.
 
 Armazene a credencial somente no gerenciador de segredos do ambiente de hosting. Nunca utilize `service_role`, `postgres` ou a credencial de migration como credencial do runtime.
 
@@ -53,6 +55,6 @@ O UUID é gerado pelo servidor antes do insert. Isso preserva o identificador re
 
 ## Validação antes de dados reais
 
-Com a credencial runtime no ambiente de homologação, execute diagnósticos positivos e negativos: leitura do único veículo permitido, criação de um lead sintético, recusa de leitura do lead, outra organização, outro status, update e delete. Interrompa e desabilite o login diante de qualquer acesso adicional. O ambiente não deve aceitar dados pessoais reais antes dessa validação.
+Com a credencial runtime no ambiente de homologação, execute `npm run db:check:supabase:runtime`. Esse diagnóstico conecta diretamente como `lead_intake_runtime` pelo Transaction Pooler, exige TLS com verificação de identidade e executa apenas leituras. Ele valida identidade, atributos, ownership, membership administrativo exato, grants e policies; consulta no máximo um veículo permitido e confirma que a leitura de `rental_leads` é recusada. Um resultado sem veículos confirma a conexão e a restrição de acesso, mas não comprova o funcionamento do formulário com um veículo disponível.
 
 Disponibilidade é verificada no momento da manifestação de interesse. O envio não reserva o veículo e a disponibilidade final depende de confirmação humana. Operação atômica e locking só serão introduzidos se o produto passar a efetuar reservas reais.

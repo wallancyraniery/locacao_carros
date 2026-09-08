@@ -57,6 +57,21 @@ describe("contrato do banco em runtime", () => {
     expect(result).not.toHaveProperty("SUPABASE_MIGRATION_DATABASE_URL");
   });
 
+  it("aceita PEM canônico com linha final Base64 curta e padding", () => {
+    const pemWithShortFinalLine = [
+      "-----BEGIN CERTIFICATE-----",
+      "QUJDREVGR0hJSktMTU5PUFFSU1RVVldYWVo1MjM0NTY3ODkwQUJDREVGR0hJSktM",
+      "MA==",
+      "-----END CERTIFICATE-----",
+    ].join("\n");
+    const result = parseRuntimeDatabaseEnvironment({
+      ...validSupabaseEnvironment,
+      SUPABASE_RUNTIME_SSL_CA_BASE64: Buffer.from(`${pemWithShortFinalLine}\n`, "utf8").toString("base64"),
+    });
+    expect(result).toMatchObject({ provider: "supabase", projectRef });
+    if (result.provider === "supabase") expect(result.sslCa).toBe(`${pemWithShortFinalLine}\n`);
+  });
+
   it("recusa Session pooler e aceita somente a porta 6543", () => {
     expect(() => parseRuntimeDatabaseEnvironment({
       ...validSupabaseEnvironment,
