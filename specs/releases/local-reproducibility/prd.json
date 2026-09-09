@@ -33,8 +33,8 @@
         "Registros externos à fixture são preservados.",
         "As mensagens de erro não exibem URL, senha ou conteúdo de ambiente."
       ],
-      "status": "todo",
-      "notes": "Cobrir por testes unitários e integração conforme technical.md."
+      "status": "done",
+      "notes": "Proteções de ambiente e mensagens sanitizadas cobertas por testes unitários; duas execuções e preservação de registros externos comprovadas no PostgreSQL local."
     },
     {
       "id": "LR-004",

@@ -1,20 +1,12 @@
 import postgres from "postgres";
+import { DevelopmentSeedEnvironmentError, parseDevelopmentSeedEnvironment } from "./development_seed_environment.mjs";
 import { developmentSeedFixture, DevelopmentSeedError, provisionDevelopmentSeed } from "./development_seed_fixture.mjs";
 
-const localHosts = new Set(["localhost", "127.0.0.1", "::1", "[::1]"]);
-
-function safeDevelopmentUrl(environment) {
-  if (!environment.DATABASE_URL || !environment.POSTGRES_DB) throw new Error("Configuração local de desenvolvimento incompleta.");
-  let url;
-  try { url = new URL(environment.DATABASE_URL); } catch { throw new Error("Configuração local de desenvolvimento inválida."); }
-  const databaseName = decodeURIComponent(url.pathname.replace(/^\//, ""));
-  if (!localHosts.has(url.hostname.toLowerCase()) || databaseName !== environment.POSTGRES_DB) throw new Error("Seed recusado: o destino deve ser o banco PostgreSQL local configurado.");
-  return url.href;
-}
-
-const sql = postgres(safeDevelopmentUrl(process.env), { max: 1 });
+let sql;
 
 try {
+  const { databaseUrl } = parseDevelopmentSeedEnvironment(process.env);
+  sql = postgres(databaseUrl, { max: 1 });
   await sql.begin(async (transaction) => {
     const adapter = {
       async validateStructure() {
@@ -63,8 +55,10 @@ try {
   });
   console.log("Fixture de desenvolvimento local provisionada com segurança.");
 } catch (error) {
-  console.error(error instanceof DevelopmentSeedError ? error.message : "Não foi possível provisionar a fixture de desenvolvimento local.");
+  console.error(error instanceof DevelopmentSeedError || error instanceof DevelopmentSeedEnvironmentError
+    ? error.message
+    : "Não foi possível provisionar a fixture de desenvolvimento local.");
   process.exitCode = 1;
 } finally {
-  await sql.end();
+  if (sql) await sql.end();
 }
