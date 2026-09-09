@@ -1,0 +1,65 @@
+{
+  "release": "public-readiness",
+  "items": [
+    {
+      "id": "PR-001",
+      "description": "Implementar proteção Turnstile server-side e idempotência por operação de envio.",
+      "acceptanceCriteria": [
+        "O honeypot é preservado e o token Turnstile é validado no servidor antes do INSERT.",
+        "Token ausente ou inválido, configuração incompleta e indisponibilidade obrigatória falham com segurança sem expor detalhes.",
+        "Retry técnico ou duplo envio da mesma operação persiste no máximo um lead, enquanto uma nova manifestação deliberada pode criar outro.",
+        "A solução não deduplica por telefone ou e-mail, não adiciona rate limiting complexo e possui testes unitários e PostgreSQL pertinentes."
+      ],
+      "status": "todo",
+      "notes": "Primeiro item tecnicamente executável. Pode ser desenvolvido e testado localmente; ativação externa das chaves e hostname ocorre no PR-004."
+    },
+    {
+      "id": "PR-002",
+      "description": "Implementar informação de privacidade, coleta mínima e retenção de 90 dias.",
+      "acceptanceCriteria": [
+        "A informação pública registra controlador, eventual operador, finalidade, canal oficial, campos coletados e retenção aprovada.",
+        "O formulário permanece sem documentos e dados financeiros sensíveis.",
+        "Um procedimento manual controlado e idempotente elimina após 90 dias somente leads que não evoluíram para locação.",
+        "Solicitações sobre dados têm procedimento documentado e testes sintéticos comprovam corte, preservação e falha fechada."
+      ],
+      "status": "todo",
+      "notes": "Retenção e coleta já estão decididas. O texto público final depende do nome jurídico, canal oficial e aprovação do controlador em open-questions.md."
+    },
+    {
+      "id": "PR-003",
+      "description": "Adicionar continuidade opcional pelo WhatsApp e validar o atendimento humano mínimo.",
+      "acceptanceCriteria": [
+        "A ação usa o WhatsApp comercial oficial e aparece somente após o lead ser persistido com sucesso.",
+        "Nenhum dado pessoal sensível é enviado automaticamente ou incluído na URL, e não existe integração com API, bot, agente ou n8n.",
+        "O runbook define responsável, substituto, revisão, tratamento em até um dia útil, atualização de status, privacidade e contingência.",
+        "O acesso humano permanece separado e auditável sem conceder SELECT em rental_leads à runtime pública."
+      ],
+      "status": "todo",
+      "notes": "Depende do número oficial, responsável, substituto e mecanismo administrativo autorizado definidos pela locadora."
+    },
+    {
+      "id": "PR-004",
+      "description": "Preparar e validar a configuração segura de produção e o procedimento de deploy.",
+      "acceptanceCriteria": [
+        "A plataforma escolhida suporta Next.js, Server Actions, secrets, Supabase, Turnstile e uso comercial.",
+        "Somente a credencial lead_intake_runtime fica disponível à aplicação, com Transaction Pooler 6543, TLS verify-full, CA explícita, RLS e grants preservados.",
+        "Build, inicialização, domínio, variáveis, health check e rollback estão documentados e configuração divergente falha antes do tráfego.",
+        "Secrets permanecem fora do Git e deploy não executa migration ou seed automaticamente."
+      ],
+      "status": "todo",
+      "notes": "Depende da escolha externa de plataforma, domínio e armazenamento de secrets; não executar deploy durante a preparação local."
+    },
+    {
+      "id": "PR-005",
+      "description": "Executar a validação pré-pública e o smoke test sintético no endereço de produção.",
+      "acceptanceCriteria": [
+        "Testes unitários, integração PostgreSQL, typecheck, lint, build e verificações de segurança pertinentes passam.",
+        "O smoke público comprova catálogo, proteção contra abuso, um envio sintético, resposta de sucesso, persistência e continuidade pelo WhatsApp.",
+        "A conferência posterior confirma logs sanitizados, retenção e runbook disponíveis e recusa de leitura de rental_leads pela runtime.",
+        "Nome e canal do controlador estão publicados, responsáveis estão designados e nenhuma credencial administrativa ou seed está na aplicação."
+      ],
+      "status": "todo",
+      "notes": "Executar somente após PR-001 a PR-004, resolução de todos os gates e autorização explícita para deploy e submissão sintética pública."
+    }
+  ]
+}
