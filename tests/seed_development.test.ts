@@ -1,42 +1,88 @@
-import { describe, expect, it } from "vitest";
-import { validateSeedCatalog } from "../scripts/validate_seed_catalog.mjs";
+import { readFileSync } from "node:fs";
+import { describe, expect, it, vi } from "vitest";
+import {
+  developmentSeedFixture,
+  planDevelopmentSeed,
+  provisionDevelopmentSeed,
+  type DevelopmentSeedAdapter,
+  type DevelopmentSeedFixture,
+  type DevelopmentSeedObservation,
+  type DevelopmentSeedPlan,
+} from "../scripts/development_seed_fixture.mjs";
 
-const validVehicle = { year: 2020, status: "available" };
+function exactObservation(): DevelopmentSeedObservation {
+  return { organizations: [{ ...developmentSeedFixture.organization }], vehicles: developmentSeedFixture.vehicles.map((vehicle) => ({ ...vehicle })) };
+}
 
-function validationMessage(vehicles: Array<{ year?: unknown; status?: unknown }>) {
-  try {
-    validateSeedCatalog(vehicles);
-  } catch (error) {
-    return error instanceof Error ? error.message : String(error);
-  }
-  return null;
+function adapterFor(initial: DevelopmentSeedObservation) {
+  let observation = initial;
+  const events: string[] = [];
+  const adapter: DevelopmentSeedAdapter = {
+    validateStructure: vi.fn(async () => { events.push("validateStructure"); }),
+    readFixtureState: vi.fn(async () => { events.push("readFixtureState"); return observation; }),
+    insertMissing: vi.fn(async (plan: DevelopmentSeedPlan, fixture: DevelopmentSeedFixture) => {
+      events.push("insertMissing");
+      observation = {
+        organizations: plan.insertOrganization ? [{ ...fixture.organization }] : observation.organizations,
+        vehicles: [...observation.vehicles, ...plan.vehiclesToInsert.map((vehicle) => ({ ...vehicle }))],
+      };
+    }),
+  };
+  return { adapter, events };
 }
 
 describe("seed de desenvolvimento", () => {
-  it("aceita catálogo sintético com ano e disponibilidade confirmados", () => {
-    expect(() => validateSeedCatalog([validVehicle, { year: 2022, status: "rented" }])).not.toThrow();
+  it("define exatamente os dois veículos autorizados pelo contrato", () => {
+    expect(developmentSeedFixture.vehicles).toEqual([
+      expect.objectContaining({ id: "20000000-0000-4000-8000-000000000003", model: "Fiesta", year: 2019, status: "available" }),
+      expect.objectContaining({ id: "20000000-0000-4000-8000-000000000004", model: "Onix", year: 2022, status: "available" }),
+    ]);
+    expect(developmentSeedFixture.vehicles.every((vehicle) => vehicle.organizationId === developmentSeedFixture.organization.id && vehicle.weeklyPriceCents === 70_000 && vehicle.isDemo)).toBe(true);
   });
 
-  it("recusa ano não confirmado com mensagem segura", () => {
-    const catalog = [validVehicle, { year: null, status: "available", confidentialMarker: "nao-expor-objeto" }];
-    const message = validationMessage(catalog);
-
-    expect(message).toBe("Seed recusado: existem veículos sem ano confirmado.");
-    expect(message).not.toContain("nao-expor-objeto");
-    expect(message).not.toContain(JSON.stringify(catalog));
+  it("valida a estrutura antes de observar ou escrever", async () => {
+    const { adapter, events } = adapterFor({ organizations: [], vehicles: [] });
+    vi.mocked(adapter.validateStructure).mockRejectedValueOnce(new Error("schema ausente"));
+    await expect(provisionDevelopmentSeed(adapter)).rejects.toThrow("schema ausente");
+    expect(events).toEqual([]);
+    expect(adapter.insertMissing).not.toHaveBeenCalled();
   });
 
-  it("recusa especificamente a disponibilidade quando todos os anos estão confirmados", () => {
-    const catalog = [validVehicle, { year: 2022, status: undefined, confidentialMarker: "postgres://usuario:senha@servidor/base" }];
-    const message = validationMessage(catalog);
-
-    expect(message).toBe("Seed recusado: existem veículos sem disponibilidade confirmada.");
-    expect(message).not.toContain("postgres://");
-    expect(message).not.toContain("senha");
-    expect(message).not.toContain(JSON.stringify(catalog));
+  it("insere a organização e os dois veículos ausentes", async () => {
+    const { adapter, events } = adapterFor({ organizations: [], vehicles: [] });
+    await expect(provisionDevelopmentSeed(adapter)).resolves.toBeUndefined();
+    expect(events).toEqual(["validateStructure", "readFixtureState", "insertMissing", "readFixtureState"]);
+    expect(adapter.insertMissing).toHaveBeenCalledWith({ insertOrganization: true, vehiclesToInsert: developmentSeedFixture.vehicles }, developmentSeedFixture);
   });
 
-  it("prioriza o bloqueio de ano quando ano e disponibilidade não estão confirmados", () => {
-    expect(validationMessage([{ year: null, status: undefined }])).toBe("Seed recusado: existem veículos sem ano confirmado.");
+  it("recusa conflito da organização sem escrever", async () => {
+    const observation = exactObservation();
+    observation.organizations[0].name = "Outra organização";
+    const { adapter } = adapterFor(observation);
+    await expect(provisionDevelopmentSeed(adapter)).rejects.toMatchObject({ code: "ORGANIZATION_DIVERGED" });
+    expect(adapter.insertMissing).not.toHaveBeenCalled();
+  });
+
+  it("recusa divergência em veículo sem escrever", async () => {
+    const observation = exactObservation();
+    observation.vehicles[1].year = 2021;
+    const { adapter } = adapterFor(observation);
+    await expect(provisionDevelopmentSeed(adapter)).rejects.toMatchObject({ code: "VEHICLE_DIVERGED" });
+    expect(adapter.insertMissing).not.toHaveBeenCalled();
+  });
+
+  it("planeja somente registros ausentes", () => {
+    const observation = exactObservation();
+    observation.vehicles.pop();
+    expect(planDevelopmentSeed(observation)).toEqual({ insertOrganization: false, vehiclesToInsert: [developmentSeedFixture.vehicles[1]] });
+  });
+
+  it("não usa escrita corretiva nem o catálogo editorial", () => {
+    const source = readFileSync("scripts/seed_development.mjs", "utf8");
+    const writes = [...source.matchAll(/transaction`\s*(INSERT|UPDATE|DELETE)/gi)].map((match) => match[1].toUpperCase());
+    expect(writes).toEqual(["INSERT", "INSERT"]);
+    expect(source).not.toMatch(/ON\s+CONFLICT|\bUPDATE\b|\bDELETE\b/i);
+    expect(source).not.toContain("demo_vehicles.json");
+    expect(source).toContain("sql.begin");
   });
 });

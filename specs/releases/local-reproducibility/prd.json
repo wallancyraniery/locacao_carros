@@ -21,8 +21,8 @@
         "Todos os registros satisfazem os campos obrigatórios e constraints atuais.",
         "Ausência de schema ou conflito de identidade encerra o seed sem correção silenciosa."
       ],
-      "status": "todo",
-      "notes": "Seguir os requisitos de banco limpo, migrations e catálogo em technical.md."
+      "status": "done",
+      "notes": "Seed local implementado com fixture dedicada, validação de estrutura e recusa de divergências; comprovado por testes unitários e integração PostgreSQL."
     },
     {
       "id": "LR-003",

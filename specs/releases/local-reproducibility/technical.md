@@ -2,9 +2,9 @@
 
 ## Estado atual relevante
 
-O bootstrap documentado executa migrations e depois `npm run db:seed:development`. O seed é exclusivo do ambiente local, usa UUIDs determinísticos e tenta sincronizar uma organização e os veículos demonstrativos em uma transação.
+O bootstrap documentado executa migrations e depois `npm run db:seed:development`. O seed permanece exclusivo do ambiente local, usa UUIDs determinísticos e provisiona uma organização e os veículos da fixture em uma transação.
 
-Hoje o seed lê `src/modules/vehicles/data/demo_vehicles.json`. O validator exige `year` inteiro e `status` em cada item; dois veículos possuem `year=null` e nenhum dos quatro declara `status`. O seed, portanto, é recusado antes de abrir a conexão. Isso preserva dados incertos, mas impede a reprodução local documentada.
+Antes do LR-002, o seed lia `src/modules/vehicles/data/demo_vehicles.json`. Dois veículos possuem `year=null` e nenhum dos quatro declara `status`, por isso o catálogo editorial não satisfazia o schema persistido. O LR-002 separou a fixture local desse catálogo, validou o schema antes da escrita e passou a recusar divergências de identidade sem correção automática.
 
 O schema exige `vehicles.year` e `vehicles.status` não nulos, além de preço não negativo, ano entre 1900 e 2200 e vínculo com uma organização. O histórico Drizzle contém as migrations `0000` a `0003`. Migrations já aplicadas são imutáveis e esta release não deve alterá-las.
 
@@ -19,7 +19,7 @@ Catálogo editorial e fixture persistida são contratos distintos. Os quatro ve�
 
 Os demais atributos persistidos devem corresponder aos dados já versionados do catálogo e às regras comerciais existentes. A implementação não deve inventar anos para o Fiat Uno Vivace ou o Renault Clio, nem persistir esses dois veículos enquanto os anos continuarem desconhecidos. O estado `available` é sintético e foi autorizado exclusivamente para os dois registros no ambiente local.
 
-## Requisitos da solução futura
+## Requisitos da release
 
 ### Ambiente e segurança
 
