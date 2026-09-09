@@ -1,0 +1,52 @@
+{
+  "release": "local-reproducibility",
+  "items": [
+    {
+      "id": "LR-001",
+      "description": "Definir o contrato canônico da fixture de desenvolvimento local.",
+      "acceptanceCriteria": [
+        "A decisão identifica quais veículos serão persistidos localmente.",
+        "Ano e status de cada registro são explícitos e não contradizem informação conhecida.",
+        "functional.md e technical.md registram o resultado decidido sem alterar regras comerciais."
+      ],
+      "status": "done",
+      "notes": "Contrato definido em functional.md e technical.md; a decisão humana está registrada em open-questions.md."
+    },
+    {
+      "id": "LR-002",
+      "description": "Tornar o seed local compatível com o contrato da fixture e com o schema atual.",
+      "acceptanceCriteria": [
+        "O seed conclui em banco local vazio após as migrations 0000 a 0003.",
+        "Somente a organização e os veículos definidos pela fixture são escritos.",
+        "Todos os registros satisfazem os campos obrigatórios e constraints atuais.",
+        "Ausência de schema ou conflito de identidade encerra o seed sem correção silenciosa."
+      ],
+      "status": "todo",
+      "notes": "Seguir os requisitos de banco limpo, migrations e catálogo em technical.md."
+    },
+    {
+      "id": "LR-003",
+      "description": "Comprovar proteção contra destinos remotos e idempotência do seed.",
+      "acceptanceCriteria": [
+        "URLs remotas, banco divergente e configuração incompleta são recusados antes de qualquer escrita.",
+        "Duas execuções consecutivas produzem uma organização e uma cópia de cada veículo da fixture.",
+        "Registros externos à fixture são preservados.",
+        "As mensagens de erro não exibem URL, senha ou conteúdo de ambiente."
+      ],
+      "status": "todo",
+      "notes": "Cobrir por testes unitários e integração conforme technical.md."
+    },
+    {
+      "id": "LR-004",
+      "description": "Validar e documentar o bootstrap local completo em um clone limpo.",
+      "acceptanceCriteria": [
+        "A sequência documentada inclui configuração, banco, migrations, fixture e aplicação.",
+        "A aplicação inicia sem credencial ou acesso Supabase.",
+        "O catálogo reflete a disponibilidade persistida e só oferece interesse para veículos disponíveis.",
+        "Os testes pertinentes, typecheck, lint, build e git diff --check passam."
+      ],
+      "status": "todo",
+      "notes": "A definição de sucesso observável está em functional.md."
+    }
+  ]
+}
