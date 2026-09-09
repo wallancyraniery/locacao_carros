@@ -60,11 +60,11 @@ Os dados de desenvolvimento usam identificadores determinísticos e podem ser si
 Primeiro instale as dependências e prepare o arquivo local de ambiente:
 
 ```bash
-npm install
+npm ci
 cp .env.example .env
 ```
 
-O arquivo `.env.example` contém apenas valores demonstrativos. Defina uma senha local no arquivo `.env` antes de iniciar o banco. O `.env` real não é versionado.
+O arquivo `.env.example` contém apenas valores demonstrativos. Substitua `defina_uma_senha_local` pela mesma senha sintética em `POSTGRES_PASSWORD`, `DATABASE_URL`, `MIGRATION_DATABASE_URL` e `TEST_DATABASE_URL` antes de iniciar o banco. O `.env` real não é versionado.
 
 Inicie o PostgreSQL:
 
@@ -85,6 +85,8 @@ Sincronize os dados demonstrativos:
 npm run db:seed:development
 ```
 
+O comando pode ser repetido com segurança. A fixture local persiste somente o Ford Fiesta 2019 e o Chevrolet Onix 2022 como disponíveis. Fiat Uno Vivace e Renault Clio continuam no catálogo editorial, mas aparecem sem interesse disponível porque não possuem registros persistidos.
+
 Inicie a aplicação:
 
 ```bash
@@ -98,6 +100,9 @@ A aplicação ficará disponível em `http://localhost:3000`.
 As principais verificações do projeto podem ser executadas com:
 
 ```bash
+npm run db:seed:development
+docker compose exec database sh -c 'createdb -U "$POSTGRES_USER" "${POSTGRES_DB}_test"'
+npm run db:migrate:test
 npm run typecheck
 npm run lint
 npm test
@@ -105,7 +110,7 @@ npm run test:postgresql
 npm run build
 ```
 
-Os testes de integração PostgreSQL utilizam um banco separado terminado em `_test`. A configuração recusa hosts remotos, destino igual ao banco principal e outras combinações consideradas inseguras para o ambiente de teste.
+O segundo seed comprova que a fixture não é duplicada. Em um bootstrap limpo, `createdb` prepara o banco separado terminado em `_test` usado pelos testes de integração. A configuração recusa hosts remotos, destino igual ao banco principal e outras combinações consideradas inseguras para o ambiente de teste.
 
 ## Integração contínua
 
