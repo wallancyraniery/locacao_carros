@@ -45,8 +45,8 @@
         "O catálogo reflete a disponibilidade persistida e só oferece interesse para veículos disponíveis.",
         "Os testes pertinentes, typecheck, lint, build e git diff --check passam."
       ],
-      "status": "todo",
-      "notes": "A definição de sucesso observável está em functional.md."
+      "status": "done",
+      "notes": "Bootstrap comprovado em cópia limpa isolada: instalação, PostgreSQL saudável, migrations, seed idempotente, aplicação e catálogo; validações completas aprovadas."
     }
   ]
 }
