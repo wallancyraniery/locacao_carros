@@ -84,5 +84,6 @@ describe("seed de desenvolvimento", () => {
     expect(source).not.toMatch(/ON\s+CONFLICT|\bUPDATE\b|\bDELETE\b/i);
     expect(source).not.toContain("demo_vehicles.json");
     expect(source).toContain("sql.begin");
+    expect(source.indexOf("parseDevelopmentSeedEnvironment(process.env)")).toBeLessThan(source.indexOf("postgres(databaseUrl"));
   });
 });
