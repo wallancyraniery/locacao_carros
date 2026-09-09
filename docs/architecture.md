@@ -25,7 +25,7 @@ A UI coleta apenas dados iniciais. A Server Action converte a entrada e mantém 
 
 O desenvolvimento comum usa PostgreSQL local e `npm run dev`. O Supabase é um PostgreSQL remoto de homologação, iniciado com `npm run dev:supabase` e credencial runtime exclusiva. Credenciais de migration/admin e runtime não são intercambiáveis.
 
-O catálogo exibido pela interface ainda é estático. A disponibilidade efetiva é consultada no banco durante o envio; portanto, um card visível não garante que o veículo esteja disponível. A fixture remota controlada existe somente para homologar o fluxo sintético autorizado.
+Os dados editoriais do catálogo — nome, imagem e especificações — permanecem estáticos. Antes de renderizar CTAs, o servidor consulta somente os UUIDs demonstrativos disponíveis no banco e combina as duas fontes. Um veículo sem confirmação aparece com interesse indisponível e não renderiza o formulário; a Server Action repete a verificação no envio para cobrir mudanças concorrentes. Erros de consulta falham fechado. A fixture remota controlada existe somente para homologar o fluxo sintético autorizado.
 
 ## Decisões estáveis
 

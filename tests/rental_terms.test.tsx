@@ -2,6 +2,7 @@ import { readFileSync } from "node:fs";
 import { render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import { HomePage } from "@/modules/marketing/components/home_page";
+import { vehicles } from "@/modules/vehicles/data/vehicles";
 import { LeadForm } from "@/modules/leads/components/lead_form";
 import { calculateInitialTotalCents, rentalTerms } from "@/modules/rentals/domain/rental_terms";
 
@@ -21,7 +22,7 @@ describe("condições comerciais", () => {
   });
 
   it("exibe aluguel, caução, total, pagamento e devolução condicionada", () => {
-    render(<HomePage />);
+    render(<HomePage vehicles={vehicles} />);
     expect(screen.getAllByText("R$ 700,00").length).toBeGreaterThan(0);
     expect(screen.getByText("R$ 1.000,00")).toBeInTheDocument();
     expect(screen.getByText("R$ 1.700,00")).toBeInTheDocument();

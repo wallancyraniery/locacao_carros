@@ -13,8 +13,8 @@ export const vehicles: Vehicle[] = demoVehicles.map((vehicle) => ({
   feature: vehicle.feature as Vehicle["feature"],
   image: { src: vehicle.imageSrc, alt: vehicle.imageAlt },
   weeklyPrice: rentalTerms.weeklyRentalCents / 100,
-  availabilityLabel: "Disponibilidade sob consulta",
-  acceptsInterest: true,
+  availabilityLabel: "Interesse indisponível",
+  acceptsInterest: false,
 }));
 
 export { demoVehicles };
