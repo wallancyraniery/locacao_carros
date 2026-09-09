@@ -1,8 +1,6 @@
-import { readFile } from "node:fs/promises";
 import postgres from "postgres";
-import { validateSeedCatalog } from "./validate_seed_catalog.mjs";
+import { developmentSeedFixture, DevelopmentSeedError, provisionDevelopmentSeed } from "./development_seed_fixture.mjs";
 
-const organizationId = "10000000-0000-4000-8000-000000000001";
 const localHosts = new Set(["localhost", "127.0.0.1", "::1", "[::1]"]);
 
 function safeDevelopmentUrl(environment) {
@@ -14,28 +12,58 @@ function safeDevelopmentUrl(environment) {
   return url.href;
 }
 
-const vehicles = JSON.parse(await readFile(new URL("../src/modules/vehicles/data/demo_vehicles.json", import.meta.url), "utf8"));
-const rentalTerms = JSON.parse(await readFile(new URL("../src/modules/rentals/data/rental_terms.json", import.meta.url), "utf8"));
-
-try {
-  validateSeedCatalog(vehicles);
-} catch (error) {
-  console.error(error instanceof Error ? error.message : "Seed recusado: catálogo inválido.");
-  process.exit(1);
-}
-
 const sql = postgres(safeDevelopmentUrl(process.env), { max: 1 });
 
 try {
   await sql.begin(async (transaction) => {
-    await transaction`insert into organizations (id, name, slug) values (${organizationId}, 'Locadora demonstrativa', 'locadora_demonstrativa') on conflict (id) do update set name = excluded.name, slug = excluded.slug, updated_at = now()`;
-    for (const vehicle of vehicles) {
-      await transaction`insert into vehicles (id, organization_id, brand, model, version, year, color, weekly_price_cents, status, is_demo) values (${vehicle.id}, ${organizationId}, ${vehicle.brand}, ${vehicle.model}, ${vehicle.version}, ${vehicle.year}, ${vehicle.color}, ${rentalTerms.weeklyRentalCents}, ${vehicle.status}, true) on conflict (id) do update set brand = excluded.brand, model = excluded.model, version = excluded.version, year = excluded.year, color = excluded.color, weekly_price_cents = excluded.weekly_price_cents, status = excluded.status, is_demo = true, updated_at = now() where vehicles.organization_id = excluded.organization_id and vehicles.is_demo = true`;
-    }
+    const adapter = {
+      async validateStructure() {
+        const rows = await transaction`
+          SELECT table_name AS "tableName", column_name AS "columnName"
+          FROM information_schema.columns
+          WHERE table_schema = 'public' AND table_name IN ('organizations', 'vehicles')
+        `;
+        const columns = new Set(rows.map(({ tableName, columnName }) => `${tableName}.${columnName}`));
+        const required = [
+          "organizations.id", "organizations.name", "organizations.slug",
+          "vehicles.id", "vehicles.organization_id", "vehicles.brand", "vehicles.model",
+          "vehicles.version", "vehicles.year", "vehicles.color", "vehicles.weekly_price_cents",
+          "vehicles.status", "vehicles.is_demo",
+        ];
+        if (required.some((column) => !columns.has(column))) throw new DevelopmentSeedError("SCHEMA_MISSING");
+      },
+      async readFixtureState() {
+        const { organization, vehicles: fixtureVehicles } = developmentSeedFixture;
+        const organizations = await transaction`
+          SELECT id::text, name, slug FROM organizations
+          WHERE id = ${organization.id} OR slug = ${organization.slug}
+        `;
+        const vehicles = await transaction`
+          SELECT id::text, organization_id::text AS "organizationId", brand, model, version,
+                 year, color, weekly_price_cents AS "weeklyPriceCents", status, is_demo AS "isDemo"
+          FROM vehicles
+          WHERE id IN ${transaction(fixtureVehicles.map(({ id }) => id))}
+        `;
+        return { organizations, vehicles };
+      },
+      async insertMissing(plan, fixture) {
+        if (plan.insertOrganization) {
+          const organization = fixture.organization;
+          await transaction`INSERT INTO organizations (id, name, slug) VALUES (${organization.id}, ${organization.name}, ${organization.slug})`;
+        }
+        for (const vehicle of plan.vehiclesToInsert) {
+          await transaction`
+            INSERT INTO vehicles (id, organization_id, brand, model, version, year, color, weekly_price_cents, status, is_demo)
+            VALUES (${vehicle.id}, ${vehicle.organizationId}, ${vehicle.brand}, ${vehicle.model}, ${vehicle.version}, ${vehicle.year}, ${vehicle.color}, ${vehicle.weeklyPriceCents}, ${vehicle.status}, ${vehicle.isDemo})
+          `;
+        }
+      },
+    };
+    await provisionDevelopmentSeed(adapter);
   });
-  console.log("Dados demonstrativos locais sincronizados com segurança.");
-} catch {
-  console.error("Não foi possível sincronizar os dados demonstrativos locais.");
+  console.log("Fixture de desenvolvimento local provisionada com segurança.");
+} catch (error) {
+  console.error(error instanceof DevelopmentSeedError ? error.message : "Não foi possível provisionar a fixture de desenvolvimento local.");
   process.exitCode = 1;
 } finally {
   await sql.end();
