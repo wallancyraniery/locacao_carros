@@ -9,6 +9,6 @@ export type Vehicle = {
   feature: "Completo";
   image: { src: string; alt: string };
   weeklyPrice: number;
-  availabilityLabel: "Disponibilidade sob consulta";
-  acceptsInterest: true;
+  availabilityLabel: "Disponível para interesse" | "Interesse indisponível";
+  acceptsInterest: boolean;
 };

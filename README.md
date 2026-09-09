@@ -156,7 +156,7 @@ A organização por módulos mantém regras de negócio, infraestrutura, valida�
 
 ## Próximas etapas
 
-O próximo ciclo deve alinhar o catálogo demonstrativo à disponibilidade consultada no banco e preparar proteção contra abuso, privacidade e operação antes de uso público. CAPTCHA só deve ser incluído se necessário. Autenticação, painel administrativo e pagamentos pertencem a uma fase posterior, caso o processo humano de análise passe a exigir essas funcionalidades.
+O próximo ciclo deve preparar proteção contra abuso, privacidade e operação antes de uso público. O catálogo mantém conteúdo editorial estático, mas os CTAs de interesse já acompanham a disponibilidade consultada no banco. CAPTCHA só deve ser incluído se necessário. Autenticação, painel administrativo e pagamentos pertencem a uma fase posterior, caso o processo humano de análise passe a exigir essas funcionalidades.
 
 ## Autor
 

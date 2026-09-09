@@ -37,7 +37,6 @@ Autenticação, painel administrativo e pagamentos ficam fora do escopo por enqu
 
 ### P1 — entrega profissional
 
-- Alinhar o catálogo estático com a disponibilidade consultada no banco.
 - Evitar duplicidade em reenvios sem deduplicar pessoas apenas por telefone ou e-mail.
 - Exercitar o repository real com a role restrita nos testes PostgreSQL.
 - Documentar o processo humano de revisão, contato e tratamento dos leads.
