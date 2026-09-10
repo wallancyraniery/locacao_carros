@@ -3,6 +3,7 @@ export type LeadFormState = {
   message?: string;
   errors?: Record<string, string[]>;
   values?: Record<string, string>;
+  turnstileResetId?: string;
 };
 
 export const initialLeadFormState: LeadFormState = { status: "idle" };

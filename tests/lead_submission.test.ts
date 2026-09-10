@@ -9,8 +9,13 @@ const drizzleRepository = vi.hoisted(() => ({
   createLead: vi.fn(),
 }));
 vi.mock("@/modules/leads/infrastructure/drizzle_lead_repository.server", () => ({ drizzleLeadRepository: drizzleRepository }));
+const turnstileProtection = vi.hoisted(() => ({ verify: vi.fn() }));
+vi.mock("@/modules/leads/infrastructure/turnstile_submission_protection.server", () => ({ turnstileSubmissionProtection: turnstileProtection }));
 
 const validInput = {
+  operationId: "40000000-0000-4000-8000-000000000001",
+  turnstileIdempotencyKey: "50000000-0000-4000-8000-000000000001",
+  turnstileToken: "synthetic-token",
   vehicleId: "20000000-0000-4000-8000-000000000001",
   fullName: "  Pessoa de Teste  ",
   phone: "(12) 99999-9999",
@@ -25,6 +30,8 @@ const validInput = {
   acknowledgement: "accepted" as const,
   website: "",
 };
+
+const protection = () => ({ verify: vi.fn().mockResolvedValue(true) });
 
 function repository(): LeadRepository {
   return {
@@ -46,13 +53,15 @@ describe("envio de interesse", () => {
       organizationId: "10000000-0000-4000-8000-000000000001",
     });
     drizzleRepository.createLead.mockReset().mockResolvedValue({ id: "30000000-0000-4000-8000-000000000001" });
+    turnstileProtection.verify.mockReset().mockResolvedValue(true);
   });
 
   it("valida, normaliza e envia dados válidos", async () => {
     const adapter = repository();
-    expect(await submitLead(adapter, validInput)).toMatchObject({ status: "success" });
+    expect(await submitLead(adapter, protection(), validInput)).toMatchObject({ status: "success" });
     expect(adapter.createLead).toHaveBeenCalledWith(expect.objectContaining({
       fullName: "Pessoa de Teste",
+      operationId: validInput.operationId,
       hasDefinitiveLicense: true,
       usagePurpose: "professional_app",
       hasEar: true,
@@ -67,28 +76,30 @@ describe("envio de interesse", () => {
     ["finalidade ausente", { usagePurpose: undefined }, "usagePurpose", "Informe a finalidade de uso do veículo."],
     ["EAR ausente", { hasEar: undefined }, "hasEar", "Informe sua situação em relação à EAR."],
   ])("rejeita %s com mensagem em português", async (_name, changes, field, message) => {
-    const result = await submitLead(repository(), { ...validInput, ...changes } as never);
+    const result = await submitLead(repository(), protection(), { ...validInput, ...changes } as never);
     expect(result).toMatchObject({ status: "invalid", errors: { [field]: [message] } });
   });
 
   it("limita entradas excessivas", async () => {
-    const result = await submitLead(repository(), { ...validInput, fullName: "a".repeat(121) });
+    const result = await submitLead(repository(), protection(), { ...validInput, fullName: "a".repeat(121) });
     expect(result).toMatchObject({ status: "invalid", errors: { fullName: ["Nome completo deve ter no máximo 120 caracteres."] } });
   });
 
   it("ignora honeypot preenchido sem consultar ou persistir", async () => {
     const adapter = repository();
-    expect(await submitLead(adapter, { ...validInput, website: "bot" })).toEqual({ status: "ignored" });
+    const verifier = protection();
+    expect(await submitLead(adapter, verifier, { ...validInput, website: "bot" })).toEqual({ status: "ignored" });
+    expect(verifier.verify).not.toHaveBeenCalled();
     expect(adapter.findAvailableDemoVehicle).not.toHaveBeenCalled();
     expect(adapter.createLead).not.toHaveBeenCalled();
   });
 
   it("exige declaração de EAR aplicável ao uso profissional", async () => {
-    expect(await submitLead(repository(), { ...validInput, hasEar: "not_applicable" })).toMatchObject({
+    expect(await submitLead(repository(), protection(), { ...validInput, hasEar: "not_applicable" })).toMatchObject({
       status: "invalid",
       errors: { hasEar: ["Informe se sua CNH possui EAR para atividade remunerada por aplicativo."] },
     });
-    expect(await submitLead(repository(), { ...validInput, usagePurpose: "other", hasEar: "not_applicable" })).toMatchObject({ status: "success" });
+    expect(await submitLead(repository(), protection(), { ...validInput, usagePurpose: "other", hasEar: "not_applicable" })).toMatchObject({ status: "success" });
   });
 
   it("preserva os campos informados quando a Server Action recebe entrada inválida", async () => {
@@ -125,10 +136,44 @@ describe("envio de interesse", () => {
       status: "error",
       message: "Não foi possível enviar seu interesse agora. Tente novamente mais tarde.",
     });
+    expect(result).not.toHaveProperty("operationId");
+    expect(result).not.toHaveProperty("turnstileResetId");
     expect(consoleError).toHaveBeenCalledWith({ stage, code });
     const diagnostic = JSON.stringify(consoleError.mock.calls);
     for (const privateValue of privateValues) expect(diagnostic).not.toContain(privateValue);
     consoleError.mockRestore();
+  });
+
+  it("mantém falha do Turnstile genérica e diagnóstico sem token ou dados pessoais", async () => {
+    turnstileProtection.verify.mockRejectedValueOnce(new LeadRepositoryDiagnosticError({
+      stage: "verify_turnstile", code: "TURNSTILE_UNAVAILABLE",
+    }));
+    const consoleError = vi.spyOn(console, "error").mockImplementation(() => undefined);
+    await expect(submitLeadAction({ status: "idle" }, formDataFromValidInput())).resolves.toMatchObject({
+      status: "error",
+      message: "Não foi possível enviar seu interesse agora. Tente novamente mais tarde.",
+    });
+    expect(consoleError).toHaveBeenCalledWith({ stage: "verify_turnstile", code: "TURNSTILE_UNAVAILABLE" });
+    const diagnostic = JSON.stringify(consoleError.mock.calls);
+    for (const privateValue of [validInput.turnstileToken, validInput.fullName, validInput.phone, validInput.email]) {
+      expect(diagnostic).not.toContain(privateValue);
+    }
+    expect(drizzleRepository.findAvailableDemoVehicle).not.toHaveBeenCalled();
+    expect(drizzleRepository.createLead).not.toHaveBeenCalled();
+    consoleError.mockRestore();
+  });
+
+  it("preserva a operação e solicita novo token quando o Siteverify rejeita definitivamente", async () => {
+    turnstileProtection.verify.mockResolvedValueOnce(false);
+    const result = await submitLeadAction({ status: "idle" }, formDataFromValidInput());
+    expect(result).toMatchObject({
+      status: "error",
+      message: "Não foi possível validar a proteção contra abuso. Tente novamente.",
+    });
+    expect(result).not.toHaveProperty("operationId");
+    expect(result.turnstileResetId).toMatch(/^[0-9a-f-]{36}$/);
+    expect(drizzleRepository.findAvailableDemoVehicle).not.toHaveBeenCalled();
+    expect(drizzleRepository.createLead).not.toHaveBeenCalled();
   });
 
   it("preserva o fluxo de sucesso da Server Action sem diagnóstico de erro", async () => {
@@ -145,6 +190,46 @@ describe("envio de interesse", () => {
   it("traduz veículo indisponível sem revelar detalhes internos", async () => {
     const adapter = repository();
     vi.mocked(adapter.findAvailableDemoVehicle).mockResolvedValue(null);
-    expect(await submitLead(adapter, validInput)).toMatchObject({ status: "unavailable", errors: { vehicleId: ["O veículo selecionado não está disponível."] } });
+    expect(await submitLead(adapter, protection(), validInput)).toMatchObject({ status: "unavailable", errors: { vehicleId: ["O veículo selecionado não está disponível."] } });
+  });
+
+  it("recusa token inválido antes de consultar ou persistir", async () => {
+    const adapter = repository();
+    const verifier = { verify: vi.fn().mockResolvedValue(false) };
+    await expect(submitLead(adapter, verifier, validInput)).resolves.toMatchObject({ status: "blocked" });
+    expect(verifier.verify).toHaveBeenCalledWith({
+      token: validInput.turnstileToken,
+      operationId: validInput.operationId,
+      idempotencyKey: validInput.turnstileIdempotencyKey,
+    });
+    expect(adapter.findAvailableDemoVehicle).not.toHaveBeenCalled();
+    expect(adapter.createLead).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    { turnstileToken: "" },
+    { operationId: "invalida" },
+    { turnstileIdempotencyKey: "invalida" },
+  ])("recusa contrato de proteção ausente ou inválido", async (change) => {
+    const adapter = repository();
+    const verifier = protection();
+    await expect(submitLead(adapter, verifier, { ...validInput, ...change })).resolves.toMatchObject({ status: "invalid" });
+    expect(verifier.verify).not.toHaveBeenCalled();
+    expect(adapter.createLead).not.toHaveBeenCalled();
+  });
+
+  it("traduz token ausente em mensagem pública segura", async () => {
+    const formData = formDataFromValidInput();
+    formData.delete("turnstileToken");
+    const result = await submitLeadAction({ status: "idle" }, formData);
+    expect(result).toMatchObject({
+      status: "error",
+      message: "Não foi possível validar a proteção contra abuso. Tente novamente.",
+      values: expect.not.objectContaining({ turnstileToken: expect.anything() }),
+    });
+    expect(result).not.toHaveProperty("operationId");
+    expect(result.turnstileResetId).toMatch(/^[0-9a-f-]{36}$/);
+    expect(turnstileProtection.verify).not.toHaveBeenCalled();
+    expect(drizzleRepository.createLead).not.toHaveBeenCalled();
   });
 });

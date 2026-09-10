@@ -1,4 +1,5 @@
 import postgres from "postgres";
+import { randomUUID } from "node:crypto";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { submitLead } from "@/modules/leads/application/submit_lead";
 import type { LeadRepository, NewLead } from "@/modules/leads/domain/lead_repository";
@@ -7,6 +8,26 @@ import { parseTestDatabaseEnvironment } from "@/config/test_database_environment
 const organizationId = "10000000-0000-4000-8000-000000000001";
 const availableVehicleId = "20000000-0000-4000-8000-000000000001";
 const rentedVehicleId = "20000000-0000-4000-8000-000000000003";
+const protection = { verify: async () => true };
+
+const validInput = (operationId: string) => ({
+  operationId,
+  turnstileIdempotencyKey: randomUUID(),
+  turnstileToken: "synthetic-token",
+  vehicleId: availableVehicleId,
+  fullName: "Pessoa Integração",
+  phone: "(12) 99999-9999",
+  email: "integration@example.test",
+  city: "Cidade de Teste",
+  hasDefinitiveLicense: "yes" as const,
+  usagePurpose: "professional_app" as const,
+  hasEar: "yes" as const,
+  driverPlatform: "",
+  preferredContactTime: "",
+  eligibilityAcknowledgement: "accepted" as const,
+  acknowledgement: "accepted" as const,
+  website: "",
+});
 
 describe("captura de interesse no PostgreSQL", () => {
   let sql: ReturnType<typeof postgres>;
@@ -15,7 +36,7 @@ describe("captura de interesse no PostgreSQL", () => {
 
   beforeAll(async () => {
     const { testDatabaseUrl } = parseTestDatabaseEnvironment(process.env);
-    sql = postgres(testDatabaseUrl, { max: 1 });
+    sql = postgres(testDatabaseUrl, { max: 2 });
     await sql`insert into organizations (id, name, slug) values (${organizationId}, 'Organização de teste', 'organizacao_de_teste') on conflict (id) do nothing`;
     const fixtures = [
       [availableVehicleId, "available"],
@@ -33,8 +54,9 @@ describe("captura de interesse no PostgreSQL", () => {
         return vehicle ? { id: vehicle.id, organizationId: vehicle.organization_id } : null;
       },
       async createLead(lead: NewLead) {
-        const [created] = await sql`insert into rental_leads (organization_id, vehicle_id, full_name, phone, email, city, has_definitive_license, usage_purpose, has_ear, driver_platform, preferred_contact_time, status) values (${lead.organizationId}, ${lead.vehicleId}, ${lead.fullName}, ${lead.phone}, ${lead.email}, ${lead.city}, ${lead.hasDefinitiveLicense}, ${lead.usagePurpose}, ${lead.hasEar}, ${lead.driverPlatform}, ${lead.preferredContactTime}, 'new') returning id`;
-        return { id: created.id };
+        const id = randomUUID();
+        await sql`insert into rental_leads (id, operation_id, organization_id, vehicle_id, full_name, phone, email, city, has_definitive_license, usage_purpose, has_ear, driver_platform, preferred_contact_time, status) values (${id}, ${lead.operationId}, ${lead.organizationId}, ${lead.vehicleId}, ${lead.fullName}, ${lead.phone}, ${lead.email}, ${lead.city}, ${lead.hasDefinitiveLicense}, ${lead.usagePurpose}, ${lead.hasEar}, ${lead.driverPlatform}, ${lead.preferredContactTime}, 'new') on conflict do nothing`;
+        return { id };
       },
     };
   });
@@ -48,7 +70,7 @@ describe("captura de interesse no PostgreSQL", () => {
   });
 
   it("cria lead válido com status e organização definidos no servidor", async () => {
-    const result = await submitLead(repository, { vehicleId: availableVehicleId, fullName: "Pessoa Integração", phone: "(12) 99999-9999", email: "integration@example.test", city: "Cidade de Teste", hasDefinitiveLicense: "yes", usagePurpose: "professional_app", hasEar: "yes", driverPlatform: "", preferredContactTime: "", eligibilityAcknowledgement: "accepted", acknowledgement: "accepted", website: "" });
+    const result = await submitLead(repository, protection, validInput(randomUUID()));
     expect(result.status).toBe("success");
     if (result.status !== "success") return;
     const [lead] = await sql`select organization_id, vehicle_id, usage_purpose, has_ear, status from rental_leads where id = ${result.leadId}`;
@@ -56,7 +78,7 @@ describe("captura de interesse no PostgreSQL", () => {
   });
 
   it.each(["30000000-0000-4000-8000-000000000099", rentedVehicleId])("rejeita veículo inexistente ou indisponível", async (vehicleId) => {
-    const result = await submitLead(repository, { vehicleId, fullName: "Pessoa Integração", phone: "(12) 99999-9999", email: "integration@example.test", city: "Cidade de Teste", hasDefinitiveLicense: "yes", usagePurpose: "other", hasEar: "not_applicable", driverPlatform: "", preferredContactTime: "", eligibilityAcknowledgement: "accepted", acknowledgement: "accepted", website: "" });
+    const result = await submitLead(repository, protection, { ...validInput(randomUUID()), vehicleId, usagePurpose: "other", hasEar: "not_applicable" });
     expect(result.status).toBe("unavailable");
   });
 
@@ -64,5 +86,28 @@ describe("captura de interesse no PostgreSQL", () => {
     const columns = await sql`select column_name from information_schema.columns where table_name = 'rental_leads'`;
     const names = columns.map(({ column_name }) => column_name);
     expect(names).not.toEqual(expect.arrayContaining(["cpf", "rg", "cnh_number", "cnh_image", "proof_of_address", "criminal_records", "card_number", "bank_account"]));
+  });
+
+  it("persiste no máximo um lead no retry técnico da mesma operação", async () => {
+    const operationId = randomUUID();
+    const results = await Promise.all([
+      submitLead(repository, protection, validInput(operationId)),
+      submitLead(repository, protection, validInput(operationId)),
+    ]);
+    expect(results).toEqual([
+      expect.objectContaining({ status: "success" }),
+      expect.objectContaining({ status: "success" }),
+    ]);
+    const [count] = await sql`select count(*)::int as count from rental_leads where operation_id = ${operationId}`;
+    expect(count.count).toBe(1);
+  });
+
+  it("permite nova manifestação com outra operação sem deduplicar contato", async () => {
+    const firstOperation = randomUUID();
+    const secondOperation = randomUUID();
+    await submitLead(repository, protection, validInput(firstOperation));
+    await submitLead(repository, protection, validInput(secondOperation));
+    const [count] = await sql`select count(*)::int as count from rental_leads where operation_id in (${firstOperation}, ${secondOperation})`;
+    expect(count.count).toBe(2);
   });
 });

@@ -11,6 +11,7 @@ vi.mock("server-only", () => ({}));
 vi.mock("@/modules/database/client.server", () => ({ getDatabase }));
 
 const lead: NewLead = {
+  operationId: "40000000-0000-4000-8000-000000000001",
   organizationId: "10000000-0000-4000-8000-000000000001",
   vehicleId: "20000000-0000-4000-8000-000000000003",
   fullName: "Pessoa Sintética ' teste",
@@ -36,20 +37,20 @@ describe("repository Drizzle real com transporte local simulado", () => {
     getDatabase.mockReset().mockReturnValue(drizzle(client, { schema }));
   });
 
-  it("insere somente as 13 colunas concedidas com valores parametrizados e UUID da aplicação", async () => {
+  it("insere somente as 14 colunas concedidas e ignora conflito da mesma operação", async () => {
     const result = await drizzleLeadRepository.createLead(lead);
 
     expect(result.id).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/);
     expect(unsafe).toHaveBeenCalledOnce();
     const [query, params] = unsafe.mock.calls[0];
     expect(query.replace(/\s+/g, " ")).toBe(
-      'insert into "rental_leads" ( "id", "organization_id", "vehicle_id", "full_name", "phone", "email", "city", '
+      'insert into "rental_leads" ( "id", "operation_id", "organization_id", "vehicle_id", "full_name", "phone", "email", "city", '
       + '"has_definitive_license", "usage_purpose", "has_ear", "driver_platform", "preferred_contact_time", "status" '
-      + ') values ( $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13 )',
+      + ') values ( $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14 ) on conflict do nothing',
     );
     expect(query).not.toMatch(/created_at|updated_at|returning/i);
     expect(params).toEqual([
-      result.id, lead.organizationId, lead.vehicleId, lead.fullName, lead.phone, lead.email,
+      result.id, lead.operationId, lead.organizationId, lead.vehicleId, lead.fullName, lead.phone, lead.email,
       lead.city, lead.hasDefinitiveLicense, lead.usagePurpose, lead.hasEar, lead.driverPlatform,
       lead.preferredContactTime, "new",
     ]);

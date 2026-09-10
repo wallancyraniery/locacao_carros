@@ -119,9 +119,11 @@ try {
     if (!identity?.user_ok || !identity.database_ok) throw Object.assign(new Error(), { code: "PROJECT_IDENTITY" });
     const history = await transaction`SELECT hash, created_at::text
       FROM drizzle.__drizzle_migrations ORDER BY created_at`;
-    if (history.length !== 4
+    if (history.length !== 5
       || history[3].hash !== "ac2397324260a6026cc07a7b7b4e359c29b454db27f6e8bf3ee4d3e505e64011"
-      || history[3].created_at !== "1788489284810") {
+      || history[3].created_at !== "1788489284810"
+      || history[4].hash !== "2ced7529b1df7ceca8ef6f638856c0854d7faf51cc6e5b9e658b5c33b03d8581"
+      || history[4].created_at !== "1788985384855") {
       throw Object.assign(new Error(), { code: "MIGRATION_STATE" });
     }
     const [role] = await transaction`SELECT rolcanlogin, rolsuper, rolcreatedb, rolcreaterole,

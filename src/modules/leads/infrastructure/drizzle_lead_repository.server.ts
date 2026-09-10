@@ -30,17 +30,17 @@ export const drizzleLeadRepository: LeadRepository = {
   async createLead(lead: NewLead) {
     const database = await runtimeDatabase();
     const id = randomUUID();
-    // Drizzle's insert builder includes timestamp DEFAULTs; runtime may insert only these columns.
+    // Runtime inserts only granted columns; ON CONFLICT makes the opaque operation idempotent.
     await runWithLeadRepositoryDiagnostic("create_lead", () => (
       database.execute(sql`insert into ${rentalLeads} (
-        "id", "organization_id", "vehicle_id", "full_name", "phone", "email", "city",
+        "id", "operation_id", "organization_id", "vehicle_id", "full_name", "phone", "email", "city",
         "has_definitive_license", "usage_purpose", "has_ear", "driver_platform",
         "preferred_contact_time", "status"
       ) values (
-        ${id}, ${lead.organizationId}, ${lead.vehicleId}, ${lead.fullName}, ${lead.phone},
+        ${id}, ${lead.operationId}, ${lead.organizationId}, ${lead.vehicleId}, ${lead.fullName}, ${lead.phone},
         ${lead.email}, ${lead.city}, ${lead.hasDefinitiveLicense}, ${lead.usagePurpose},
         ${lead.hasEar}, ${lead.driverPlatform}, ${lead.preferredContactTime}, ${"new"}
-      )`)
+      ) on conflict do nothing`)
     ));
     return { id };
   },

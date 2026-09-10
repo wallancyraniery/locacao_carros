@@ -26,8 +26,10 @@ describe("estrutura PostgreSQL", () => {
   it("possui chaves estrangeiras, índices e constraints essenciais", async () => {
     const constraints = await sql`select conname from pg_constraint where conname in ('vehicles_organization_id_fk','vehicles_weekly_price_cents_non_negative_check','vehicles_year_reasonable_check','rental_leads_organization_id_fk','rental_leads_vehicle_id_fk','rental_leads_usage_purpose_check','lead_status_history_organization_id_fk','lead_status_history_rental_lead_id_fk')`;
     expect(constraints).toHaveLength(8);
-    const indexes = await sql`select indexname from pg_indexes where schemaname = 'public' and indexname in ('vehicles_organization_status_idx','rental_leads_organization_status_idx','rental_leads_organization_created_at_idx','lead_status_history_rental_lead_created_at_idx')`;
-    expect(indexes).toHaveLength(4);
+    const indexes = await sql`select indexname from pg_indexes where schemaname = 'public' and indexname in ('vehicles_organization_status_idx','rental_leads_organization_status_idx','rental_leads_organization_created_at_idx','rental_leads_operation_id_unique','lead_status_history_rental_lead_created_at_idx')`;
+    expect(indexes).toHaveLength(5);
+    const [operation] = await sql`select is_nullable, column_default from information_schema.columns where table_schema = 'public' and table_name = 'rental_leads' and column_name = 'operation_id'`;
+    expect(operation).toEqual({ is_nullable: "NO", column_default: null });
   });
 
   it("rejeita estado inválido e preço negativo", async () => {
@@ -39,7 +41,7 @@ describe("estrutura PostgreSQL", () => {
 
   it("impede apagar registros com histórico associado", async () => {
     const [organization] = await sql`insert into organizations (name, slug) values ('Teste histórico', ${`history_${crypto.randomUUID()}`}) returning id`;
-    const [lead] = await sql`insert into rental_leads (organization_id, full_name, phone, city, has_definitive_license) values (${organization.id}, 'Pessoa de teste', '000000000', 'Cidade de teste', true) returning id`;
+    const [lead] = await sql`insert into rental_leads (operation_id, organization_id, full_name, phone, city, has_definitive_license) values (${crypto.randomUUID()}, ${organization.id}, 'Pessoa de teste', '000000000', 'Cidade de teste', true) returning id`;
     await sql`insert into lead_status_history (organization_id, rental_lead_id, to_status) values (${organization.id}, ${lead.id}, 'contacted')`;
     await expect(sql`delete from rental_leads where id = ${lead.id}`).rejects.toThrow();
     await sql`delete from lead_status_history where rental_lead_id = ${lead.id}`;

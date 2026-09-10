@@ -10,7 +10,7 @@
         "Retry técnico ou duplo envio da mesma operação persiste no máximo um lead, enquanto uma nova manifestação deliberada pode criar outro.",
         "A solução não deduplica por telefone ou e-mail, não adiciona rate limiting complexo e possui testes unitários e PostgreSQL pertinentes."
       ],
-      "status": "todo",
+      "status": "done",
       "notes": "Primeiro item tecnicamente executável. Pode ser desenvolvido e testado localmente; ativação externa das chaves e hostname ocorre no PR-004."
     },
     {
