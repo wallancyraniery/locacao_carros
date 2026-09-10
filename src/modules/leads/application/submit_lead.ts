@@ -1,22 +1,37 @@
-import type { LeadRepository } from "../domain/lead_repository";
+import type { LeadRepository, LeadSubmissionProtection } from "../domain/lead_repository";
 import { formatLeadValidationErrors, leadSubmissionSchema, type LeadSubmissionInput } from "../validation/lead_submission";
 
 export type SubmitLeadResult =
   | { status: "success"; leadId: string }
   | { status: "ignored" }
+  | { status: "blocked"; errors: Record<string, string[]> }
   | { status: "invalid"; errors: Record<string, string[]> }
   | { status: "unavailable"; errors: Record<string, string[]> };
 
-export async function submitLead(repository: LeadRepository, input: LeadSubmissionInput): Promise<SubmitLeadResult> {
+export async function submitLead(
+  repository: LeadRepository,
+  protection: LeadSubmissionProtection,
+  input: LeadSubmissionInput,
+): Promise<SubmitLeadResult> {
   if (typeof input.website === "string" && input.website.trim()) return { status: "ignored" };
 
   const parsed = leadSubmissionSchema.safeParse(input);
   if (!parsed.success) return { status: "invalid", errors: formatLeadValidationErrors(parsed.error) };
 
+  const protectedSubmission = await protection.verify({
+    token: parsed.data.turnstileToken,
+    operationId: parsed.data.operationId,
+    idempotencyKey: parsed.data.turnstileIdempotencyKey,
+  });
+  if (!protectedSubmission) {
+    return { status: "blocked", errors: { form: ["Não foi possível validar a proteção contra abuso. Tente novamente."] } };
+  }
+
   const vehicle = await repository.findAvailableDemoVehicle(parsed.data.vehicleId);
   if (!vehicle) return { status: "unavailable", errors: { vehicleId: ["O veículo selecionado não está disponível."] } };
 
   const created = await repository.createLead({
+    operationId: parsed.data.operationId,
     organizationId: vehicle.organizationId,
     vehicleId: vehicle.id,
     fullName: parsed.data.fullName,

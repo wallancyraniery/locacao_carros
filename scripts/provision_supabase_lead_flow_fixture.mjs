@@ -59,8 +59,9 @@ async function localMigrationHistory() {
   } catch {
     refuse("LOCAL_MIGRATION_HISTORY");
   }
-  if (!Array.isArray(journal.entries) || journal.entries.length !== 4
-    || journal.entries[3]?.tag !== "0003_runtime_lead_intake_access") {
+  if (!Array.isArray(journal.entries) || journal.entries.length !== 5
+    || journal.entries[3]?.tag !== "0003_runtime_lead_intake_access"
+    || journal.entries[4]?.tag !== "0004_useful_human_torch") {
     refuse("LOCAL_MIGRATION_HISTORY");
   }
   return Promise.all(journal.entries.map(async (entry, index) => {

@@ -13,6 +13,7 @@ RLS e grants mínimos permitem à runtime consultar somente a organização e o 
 - Nunca versione senha, URL real de conexão, conteúdo de `.env`, certificado ou outro secret.
 - Nunca registre FormData, nome, telefone, e-mail, cidade, query com valores, CA, URL, stack ou detalhes que possam conter dados do usuário.
 - Falhas inesperadas do fluxo de lead registram somente `{ stage, code }`, com código sanitizado e mensagem pública genérica.
+- A proteção Turnstile é validada no servidor antes do acesso ao banco. O modo sintético existe somente fora de produção; produção exige configuração Cloudflare completa e hostname esperado.
 - Use dados exclusivamente sintéticos em homologação e minimize os campos coletados no produto.
 
 ## Operações remotas

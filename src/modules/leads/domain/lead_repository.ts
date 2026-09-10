@@ -1,6 +1,7 @@
 export type AvailableDemoVehicle = { id: string; organizationId: string };
 
 export type NewLead = {
+  operationId: string;
   organizationId: string;
   vehicleId: string;
   fullName: string;
@@ -12,6 +13,10 @@ export type NewLead = {
   hasEar: boolean | null;
   driverPlatform: string | null;
   preferredContactTime: string | null;
+};
+
+export type LeadSubmissionProtection = {
+  verify(input: { token: string; operationId: string; idempotencyKey: string }): Promise<boolean>;
 };
 
 export interface LeadRepository {

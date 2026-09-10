@@ -35,7 +35,7 @@ describe("condições comerciais", () => {
 
 describe("pré-qualificação pública", () => {
   it("oferece finalidade, CNH definitiva, EAR e ciência da análise posterior", () => {
-    render(<LeadForm vehicleId="20000000-0000-4000-8000-000000000001" vehicleName="Veículo sintético" />);
+    render(<LeadForm vehicleId="20000000-0000-4000-8000-000000000001" vehicleName="Veículo sintético" operationId="40000000-0000-4000-8000-000000000001" turnstileIdempotencyKey="50000000-0000-4000-8000-000000000001" turnstile={{ mode: "local" }} />);
     expect(screen.getByRole("group", { name: "Qual será a finalidade de uso do veículo?" })).toBeInTheDocument();
     expect(screen.getByRole("group", { name: "Possui CNH definitiva?" })).toBeInTheDocument();
     expect(screen.getByRole("group", { name: "Sua CNH possui EAR?" })).toBeInTheDocument();

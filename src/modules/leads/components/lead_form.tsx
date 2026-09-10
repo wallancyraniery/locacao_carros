@@ -5,10 +5,19 @@ import Link from "next/link";
 import { submitLeadAction } from "../actions/submit_lead_action";
 import { initialLeadFormState } from "./lead_form_state";
 import { rentalTerms, usagePurposeLabels, usagePurposes } from "@/modules/rentals/domain/rental_terms";
+import { TurnstileField } from "./turnstile_field";
+
+type TurnstileWidgetConfiguration = { mode: "local" } | { mode: "cloudflare"; siteKey: string };
 
 const ErrorMessage = ({ errors, field }: { errors?: Record<string, string[]>; field: string }) => errors?.[field]?.[0] ? <p className="field-error" id={`${field}-error`}>{errors[field][0]}</p> : null;
 
-export function LeadForm({ vehicleId, vehicleName }: { vehicleId: string; vehicleName: string }) {
+export function LeadForm({ vehicleId, vehicleName, operationId, turnstileIdempotencyKey, turnstile }: {
+  vehicleId: string;
+  vehicleName: string;
+  operationId: string;
+  turnstileIdempotencyKey: string;
+  turnstile: TurnstileWidgetConfiguration;
+}) {
   const [state, action, pending] = useActionState(submitLeadAction, initialLeadFormState);
   const described = (field: string) => state.errors?.[field] ? `${field}-error` : undefined;
   const preventUnexpectedSubmit = (event: FormEvent<HTMLFormElement>) => {
@@ -18,6 +27,7 @@ export function LeadForm({ vehicleId, vehicleName }: { vehicleId: string; vehicl
   if (state.status === "success") return <div className="form-success" role="status"><h2>Recebemos seu interesse</h2><p>{state.message}</p><p>O envio não representa reserva, aprovação ou garantia de disponibilidade.</p><Link className="button secondary" href="/#veiculos">Voltar aos veículos</Link></div>;
   return <form action={action} className="lead-form" noValidate onSubmit={preventUnexpectedSubmit}>
     <input type="hidden" name="vehicleId" value={vehicleId} />
+    <input type="hidden" name="operationId" value={operationId} />
     <div className="form-field"><label htmlFor="selectedVehicle">Veículo selecionado</label><input id="selectedVehicle" value={vehicleName} readOnly /></div>
     <div className="form-field"><label htmlFor="fullName">Nome completo</label><input id="fullName" name="fullName" autoComplete="name" defaultValue={state.values?.fullName} aria-invalid={!!state.errors?.fullName} aria-describedby={described("fullName")} /><ErrorMessage errors={state.errors} field="fullName" /></div>
     <div className="form-grid"><div className="form-field"><label htmlFor="phone">Telefone</label><input id="phone" name="phone" type="tel" autoComplete="tel" placeholder="(12) 99999-9999" defaultValue={state.values?.phone} aria-invalid={!!state.errors?.phone} aria-describedby={described("phone")} /><ErrorMessage errors={state.errors} field="phone" /></div><div className="form-field"><label htmlFor="email">E-mail <span>(opcional)</span></label><input id="email" name="email" type="email" autoComplete="email" defaultValue={state.values?.email} aria-invalid={!!state.errors?.email} aria-describedby={described("email")} /><ErrorMessage errors={state.errors} field="email" /></div></div>
@@ -31,6 +41,7 @@ export function LeadForm({ vehicleId, vehicleName }: { vehicleId: string; vehicl
     <label className="acknowledgement"><input type="checkbox" name="eligibilityAcknowledgement" value="accepted" defaultChecked={state.values?.eligibilityAcknowledgement === "accepted"} aria-describedby={described("eligibilityAcknowledgement")} /> <span>Declaro que compreendi os requisitos informados e que documentos serão analisados somente em etapa posterior.</span></label><ErrorMessage errors={state.errors} field="eligibilityAcknowledgement" />
     <label className="acknowledgement"><input type="checkbox" name="acknowledgement" value="accepted" defaultChecked={state.values?.acknowledgement === "accepted"} aria-describedby={described("acknowledgement")} /> <span>Estou ciente de que o envio não garante reserva, aprovação ou disponibilidade.</span></label><ErrorMessage errors={state.errors} field="acknowledgement" />
     <p className="privacy-note">Seus dados serão utilizados somente para analisar seu interesse na locação e realizar contato.</p>
+    <TurnstileField configuration={turnstile} idempotencyKey={turnstileIdempotencyKey} resetId={state.turnstileResetId} />
     {state.message && <p className="form-message" role="alert">{state.message}</p>}
     <button className="button primary submit-button" type="submit" data-intent="submit-interest" disabled={pending}>{pending ? "Enviando..." : "Enviar interesse"}</button>
   </form>;

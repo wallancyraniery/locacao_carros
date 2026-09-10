@@ -30,7 +30,8 @@ Os dados editoriais do catálogo — nome, imagem e especificações — permane
 ## Decisões estáveis
 
 - Dados do formulário passam pelo servidor; a aplicação não usa credencial administrativa.
-- UUIDs são gerados pelo servidor, dinheiro é armazenado em centavos e datas usam `timestamptz`.
+- UUIDs do lead e da operação são gerados pelo servidor, dinheiro é armazenado em centavos e datas usam `timestamptz`.
+- A identidade opaca da operação permanece estável em retry técnico e possui unicidade no PostgreSQL; uma nova visita recebe outra identidade, sem deduplicação por telefone ou e-mail.
 - O INSERT de leads enumera somente as colunas concedidas à runtime e não depende de `RETURNING`.
 - A análise após o interesse permanece humana; o sistema ainda não é uma plataforma completa de reservas.
 - Migrations aplicadas são imutáveis; mudanças de schema entram em nova migration.

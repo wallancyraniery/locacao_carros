@@ -53,7 +53,7 @@ Cada operação possui uma policy permissiva mínima e uma guarda `AS RESTRICTIV
 
 O UUID é gerado pelo servidor antes do insert. Isso preserva o identificador retornado pelo repository sem conceder `SELECT` sobre `rental_leads`, privilégio necessário para `INSERT ... RETURNING id`.
 
-O repository usa `database.execute(sql...)` do Drizzle com valores parametrizados e lista explícita das 13 colunas autorizadas. O builder `insert(rentalLeads)` do schema completo incluía também `created_at` e `updated_at` com `DEFAULT`, colunas fora do grant runtime. Os timestamps agora são omitidos do INSERT e preenchidos pelos defaults do PostgreSQL. Não houve alteração de grants, RLS ou migrations.
+O repository usa `database.execute(sql...)` do Drizzle com valores parametrizados e lista explícita das 14 colunas previstas, incluindo a identidade opaca da operação. O builder `insert(rentalLeads)` do schema completo incluiria também `created_at` e `updated_at` com `DEFAULT`, colunas fora do grant runtime. Os timestamps são omitidos do INSERT e preenchidos pelos defaults do PostgreSQL. Quando aplicada no destino autorizado, a migration 0004 acrescenta somente `operation_id`, sua unicidade e o grant de INSERT dessa coluna; a runtime continua sem leitura de `rental_leads`.
 
 ## Validação antes de dados reais
 
