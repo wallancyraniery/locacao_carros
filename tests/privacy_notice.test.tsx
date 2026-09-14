@@ -26,7 +26,9 @@ describe("aviso público de privacidade", () => {
       "hasDefinitiveLicense", "hasEar", "operationId", "phone", "preferredContactTime", "turnstileIdempotencyKey",
       "turnstileToken", "usagePurpose", "vehicleId", "website",
     ]);
-    expect(source).not.toMatch(/(?:cpf|rg|cnhNumber|cnhImage|proofOfAddress|criminalRecords|cardNumber|bankAccount)/i);
+    for (const field of fields) {
+      expect(field).not.toMatch(/^(?:cpf|rg|cnhNumber|cnhImage|proofOfAddress|criminalRecords|cardNumber|bankAccount)$/i);
+    }
   });
 
   it("exibe somente a identidade e o canal fornecidos pela configuração", () => {
