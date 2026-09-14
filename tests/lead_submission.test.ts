@@ -1,10 +1,8 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { submitLead } from "@/modules/leads/application/submit_lead";
 import { submitLeadAction } from "@/modules/leads/actions/submit_lead_action";
 import type { LeadRepository } from "@/modules/leads/domain/lead_repository";
 import { LeadRepositoryDiagnosticError } from "@/modules/leads/infrastructure/lead_repository_diagnostic";
-
-vi.mock("server-only", () => ({}));
 
 const drizzleRepository = vi.hoisted(() => ({
   findAvailableDemoVehicle: vi.fn(),
@@ -56,10 +54,6 @@ describe("envio de interesse", () => {
     });
     drizzleRepository.createLead.mockReset().mockResolvedValue({ id: "30000000-0000-4000-8000-000000000001" });
     turnstileProtection.verify.mockReset().mockResolvedValue(true);
-  });
-
-  afterEach(() => {
-    vi.unstubAllEnvs();
   });
 
   it("valida, normaliza e envia dados válidos", async () => {
@@ -166,33 +160,6 @@ describe("envio de interesse", () => {
     }
     expect(drizzleRepository.findAvailableDemoVehicle).not.toHaveBeenCalled();
     expect(drizzleRepository.createLead).not.toHaveBeenCalled();
-    consoleError.mockRestore();
-  });
-
-  it("recusa submissão direta em produção sem configuração oficial de privacidade", async () => {
-    vi.stubEnv("NODE_ENV", "production");
-    vi.stubEnv("PRIVACY_CONTROLLER_NAME", undefined);
-    vi.stubEnv("PRIVACY_CONTACT_LABEL", undefined);
-    vi.stubEnv("PRIVACY_CONTACT_URL", undefined);
-    const consoleError = vi.spyOn(console, "error").mockImplementation(() => undefined);
-
-    const result = await submitLeadAction({ status: "idle" }, formDataFromValidInput());
-
-    expect(result).toMatchObject({
-      status: "error",
-      message: "Não foi possível enviar seu interesse agora. Tente novamente mais tarde.",
-    });
-    expect(turnstileProtection.verify).not.toHaveBeenCalled();
-    expect(drizzleRepository.findAvailableDemoVehicle).not.toHaveBeenCalled();
-    expect(drizzleRepository.createLead).not.toHaveBeenCalled();
-    expect(consoleError).toHaveBeenCalledExactlyOnceWith({
-      stage: "submit_lead",
-      code: "INVALID_PRIVACY_NOTICE_ENVIRONMENT",
-    });
-    const diagnostic = JSON.stringify(consoleError.mock.calls);
-    for (const privateValue of [validInput.fullName, validInput.phone, validInput.email, validInput.city]) {
-      expect(diagnostic).not.toContain(privateValue);
-    }
     consoleError.mockRestore();
   });
 

@@ -3,6 +3,10 @@ import {
   type SupabaseRuntimeDatabaseEnvironment,
 } from "./runtime_database_environment";
 import {
+  parsePrivacyNoticeEnvironment,
+  type PrivacyNoticeConfiguration,
+} from "./privacy_notice_environment";
+import {
   parseTurnstileEnvironment,
   type TurnstileEnvironment,
 } from "./turnstile_environment";
@@ -17,8 +21,10 @@ const forbiddenDatabaseCredentialFields = [
 ] as const;
 
 type CloudflareTurnstileEnvironment = Extract<TurnstileEnvironment, { mode: "cloudflare" }>;
+type ConfiguredPrivacyNotice = Extract<PrivacyNoticeConfiguration, { mode: "configured" }>;
 
 export type ProductionEnvironment = {
+  privacyNotice: ConfiguredPrivacyNotice;
   runtimeDatabase: SupabaseRuntimeDatabaseEnvironment;
   turnstile: CloudflareTurnstileEnvironment;
 };
@@ -49,5 +55,8 @@ export function parseProductionEnvironment(
   const turnstile = parseTurnstileEnvironment(environment);
   if (turnstile.mode !== "cloudflare") fail();
 
-  return { runtimeDatabase, turnstile };
+  const privacyNotice = parsePrivacyNoticeEnvironment(environment);
+  if (privacyNotice.mode !== "configured") fail();
+
+  return { privacyNotice, runtimeDatabase, turnstile };
 }
