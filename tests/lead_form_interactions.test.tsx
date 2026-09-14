@@ -133,7 +133,9 @@ describe("interações do formulário de interesse", () => {
    expect(screen.queryByRole("link", { name: /Continuar pelo WhatsApp/ })).toBeNull();
    fireEvent.click(container.querySelector<HTMLButtonElement>('button[data-intent="submit-interest"]')!);
    await screen.findByText(result.message);
-   const link = screen.queryByRole("link", { name: /Continuar pelo WhatsApp/ });
+   const link = result.whatsappUrl
+     ? await screen.findByRole("link", { name: /Continuar pelo WhatsApp/ })
+     : screen.queryByRole("link", { name: /Continuar pelo WhatsApp/ });
    if (result.whatsappUrl) {
      expect(link).toHaveAttribute("href", result.whatsappUrl);
      expect(link).toHaveAttribute("rel", "noopener noreferrer");
