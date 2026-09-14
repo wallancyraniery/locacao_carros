@@ -59,7 +59,8 @@ describe("diagnóstico seguro do repository de leads", () => {
 
   it.each([
     "ERR_TLS_CERT_ALTNAME_INVALID", "ECONNREFUSED", "INVALID_RUNTIME_DATABASE_ENVIRONMENT",
-    "CONNECT_TIMEOUT", "CONNECTION_CLOSED", "CONNECTION_ENDED", "CONNECTION_DESTROYED",
+    "INVALID_PRODUCTION_ENVIRONMENT", "CONNECT_TIMEOUT", "CONNECTION_CLOSED",
+    "CONNECTION_ENDED", "CONNECTION_DESTROYED",
   ])("reconhece código de configuração, conexão ou TLS permitido: %s", (code) => {
     expect(safeLeadRepositoryDiagnostic({ cause: { code } }))
       .toEqual({ stage: "submit_lead", code });
