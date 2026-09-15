@@ -1,6 +1,7 @@
 export type LeadFormState = {
   status: "idle" | "success" | "error";
   message?: string;
+  whatsappUrl?: string;
   errors?: Record<string, string[]>;
   values?: Record<string, string>;
   turnstileResetId?: string;

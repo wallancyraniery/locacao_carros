@@ -1,5 +1,6 @@
 "use server";
 
+import { getWhatsAppContinuationUrl } from "@/config/whatsapp_continuation.server";
 import { randomUUID } from "node:crypto";
 import { getPrivacyNoticeConfiguration } from "@/config/privacy_notice_environment.server";
 import { submitLead, type SubmitLeadResult } from "../application/submit_lead";
@@ -23,7 +24,10 @@ export async function submitLeadAction(_state: LeadFormState, formData: FormData
     return { status: "error", message: "Não foi possível enviar seu interesse agora. Tente novamente mais tarde.", values: formValues };
   }
   if (result.status === "success" || result.status === "ignored") {
-    return { status: "success", message: "Interesse enviado com sucesso. A locadora analisará seus dados e entrará em contato." };
+    const whatsappUrl = result.status === "success" ? getWhatsAppContinuationUrl() : undefined;
+    return { status: "success", message: "Interesse enviado com sucesso. A locadora analisará seus dados e entrará em contato.",
+      ...(whatsappUrl ? { whatsappUrl } : {}),
+    };
   }
   if (result.status === "blocked" || result.errors.turnstileToken) {
     return {

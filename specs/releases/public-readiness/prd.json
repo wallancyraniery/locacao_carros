@@ -35,7 +35,7 @@
         "O acesso humano permanece separado e auditável sem conceder SELECT em rental_leads à runtime pública."
       ],
       "status": "todo",
-      "notes": "Depende do número oficial, responsável, substituto e mecanismo administrativo autorizado definidos pela locadora."
+      "notes": "Continuidade opcional e runbook implementados localmente; ver docs/lead_human_service.md. Permanece todo até número oficial, responsável, substituto, mecanismo administrativo autorizado e validação prática do atendimento. Sem dependência de código da PR #21."
     },
     {
       "id": "PR-004",
