@@ -8,6 +8,10 @@ O formulário preserva o honeypot e possui integração Turnstile server-side im
 
 O destino de deploy permanece indefinido. Em homologação, a aplicação usa `lead_intake_runtime`, Transaction Pooler 6543, TLS `verify-full` com CA explícita, grants mínimos e RLS. A runtime consulta apenas organização e disponibilidade necessárias, insere as colunas autorizadas e não lê `rental_leads`. Credenciais de migration/admin e runtime permanecem separadas. Consulte [runtime_database_access.md](../../../docs/runtime_database_access.md).
 
+O contrato local de produção valida em conjunto, antes do uso do banco ou da proteção externa pelo formulário, a configuração runtime Supabase, a configuração Cloudflare Turnstile e a identidade e o canal oficiais de privacidade. Ele recusa provider local, Session Pooler, TLS sem verificação de identidade, CA ausente ou com formato PEM/Base64 inválido, usuário administrativo, Turnstile local ou incompleto, privacidade incompleta ou fictícia e credenciais administrativas conhecidas no processo da aplicação. A validação local da CA confirma apenas formato canônico e presença de exatamente um certificado; não valida cadeia, vigência ou confiança, nem comprova qual certificado será apresentado pelo servidor remoto. O contrato não abre conexão e não comprova conectividade, grants, RLS, policies ou identidade efetiva; essas verificações dependem do ambiente autorizado. Os comandos `build` e `start` não executam migration nem seed, e o workflow atual usa migrations somente como etapas explícitas do banco efêmero de CI.
+
+Esta integração preserva a privacidade e a retenção da PR #21, reutiliza seu validador no contrato central de produção da PR #23 e incorpora a continuidade opcional pelo WhatsApp da PR #22. A validação final da release ainda depende da validação operacional dessas entregas, além de plataforma, domínio, armazenamento de secrets e dados oficiais ainda não definidos. PR-004 permanece `todo` e nenhuma prontidão de publicação é inferida desta prova local.
+
 ## Mudanças mínimas necessárias
 
 ### Abuso e idempotência da operação

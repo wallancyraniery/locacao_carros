@@ -35,7 +35,7 @@
         "O acesso humano permanece separado e auditável sem conceder SELECT em rental_leads à runtime pública."
       ],
       "status": "todo",
-      "notes": "Continuidade opcional e runbook implementados localmente; ver docs/lead_human_service.md. Permanece todo até número oficial, responsável, substituto, mecanismo administrativo autorizado e validação prática do atendimento. Sem dependência de código da PR #21."
+      "notes": "Continuidade opcional e runbook implementados localmente; ver docs/lead_human_service.md. Permanece todo até número oficial, responsável, substituto, mecanismo administrativo autorizado e validação prática do atendimento. Integrado à privacidade e retenção da PR #21 e ao contrato local de produção da PR #23."
     },
     {
       "id": "PR-004",
@@ -47,7 +47,7 @@
         "Secrets permanecem fora do Git e deploy não executa migration ou seed automaticamente."
       ],
       "status": "todo",
-      "notes": "Depende da escolha externa de plataforma, domínio e armazenamento de secrets; não executar deploy durante a preparação local."
+      "notes": "Contrato local de produção implementado e integrado à privacidade e à continuidade opcional. Depende da escolha externa de plataforma, domínio e armazenamento de secrets e da validação operacional; não executar deploy durante a preparação local."
     },
     {
       "id": "PR-005",
