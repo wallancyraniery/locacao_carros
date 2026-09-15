@@ -1,8 +1,10 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { submitLead } from "@/modules/leads/application/submit_lead";
 import { submitLeadAction } from "@/modules/leads/actions/submit_lead_action";
 import type { LeadRepository } from "@/modules/leads/domain/lead_repository";
 import { LeadRepositoryDiagnosticError } from "@/modules/leads/infrastructure/lead_repository_diagnostic";
+
+vi.mock("server-only", () => ({}));
 
 const drizzleRepository = vi.hoisted(() => ({
   findAvailableDemoVehicle: vi.fn(),
@@ -47,6 +49,8 @@ function formDataFromValidInput() {
 }
 
 describe("envio de interesse", () => {
+  afterEach(() => vi.unstubAllEnvs());
+
   beforeEach(() => {
     drizzleRepository.findAvailableDemoVehicle.mockReset().mockResolvedValue({
       id: validInput.vehicleId,

@@ -59,6 +59,11 @@ function validFormData() {
 
 describe("integração local dos gates públicos", () => {
   beforeEach(() => {
+    for (const field of [
+      "DATABASE_URL", "MIGRATION_DATABASE_URL", "TEST_DATABASE_URL", "POSTGRES_PASSWORD",
+      "SUPABASE_MIGRATION_DATABASE_URL", "SUPABASE_SECRET_KEY",
+      "PRIVACY_CONTROLLER_NAME", "PRIVACY_CONTACT_LABEL", "PRIVACY_CONTACT_URL",
+    ]) vi.stubEnv(field, undefined);
     for (const [field, value] of Object.entries(productionEnvironmentWithoutPrivacy)) {
       vi.stubEnv(field, value);
     }
