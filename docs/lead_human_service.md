@@ -31,4 +31,4 @@ Se o WhatsApp estiver indisponível, o registro já persistido permanece na fila
 
 ## Estado desta entrega
 
-Implementação local independente da PR #21, sem incorporar seu código. PR-003 continua `todo` até fornecimento das definições acima e validação prática do atendimento. PR-004 e PR-005 não são executadas aqui. Consulte os [gates da release](../specs/releases/public-readiness/open-questions.md).
+Privacidade e retenção seguem o [procedimento incorporado à main](lead_privacy_and_retention.md). PR-003 continua `todo` até fornecimento das definições acima e validação prática do atendimento. PR-004 e PR-005 não são executadas aqui. Consulte os [gates da release](../specs/releases/public-readiness/open-questions.md).

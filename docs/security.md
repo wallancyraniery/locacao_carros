@@ -22,4 +22,4 @@ Toda operação administrativa remota deve ser explícita, previamente delimitad
 
 Não execute `db:seed:development` no Supabase. Use somente provisionadores remotos dedicados e autorizados. Não altere RLS, grants, roles, TLS ou migrations aplicadas para contornar uma falha sem causa comprovada e autorização específica.
 
-Antes de uso público com dados reais, o produto ainda precisa de proteção adequada contra abuso e de política definida para privacidade, retenção e atendimento dos leads.
+O fluxo público possui proteção contra abuso e um procedimento manual de retenção. A política, o aviso e os gates operacionais estão em [lead_privacy_and_retention.md](lead_privacy_and_retention.md). Identidade jurídica, canal oficial e responsáveis ainda precisam ser definidos antes do uso público.

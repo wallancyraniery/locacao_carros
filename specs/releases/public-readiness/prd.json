@@ -23,7 +23,7 @@
         "Solicitações sobre dados têm procedimento documentado e testes sintéticos comprovam corte, preservação e falha fechada."
       ],
       "status": "todo",
-      "notes": "Retenção e coleta já estão decididas. O texto público final depende do nome jurídico, canal oficial e aprovação do controlador em open-questions.md."
+      "notes": "Aviso factual, gate de produção e procedimento manual de retenção estão implementados localmente. O item permanece pendente do nome jurídico, canal oficial, responsáveis e mecanismo administrativo aprovados em open-questions.md."
     },
     {
       "id": "PR-003",
