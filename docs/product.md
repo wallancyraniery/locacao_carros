@@ -26,7 +26,7 @@ Nesta fase não devem ser coletados CPF, RG, número ou imagem da CNH, comprovan
 
 O MVP inclui catálogo e detalhes demonstrativos, formulário de interesse, validação no servidor, verificação de veículo disponível, persistência do lead, resposta clara ao usuário, banco PostgreSQL, testes e ambiente Supabase de homologação com acesso restrito.
 
-Autenticação, painel administrativo e pagamentos ficam fora do escopo por enquanto. Só devem entrar quando uma necessidade operacional ou comercial comprovada justificar a complexidade.
+A primeira entrega da Central de Interessados acrescenta autenticação restrita e listagem somente leitura por organização. Provisionamento de usuários é administrativo; edição de leads, recuperação de acesso na aplicação e pagamentos permanecem fora do escopo. Veja [central_interessados.md](central_interessados.md).
 
 ## Prioridades conhecidas
 

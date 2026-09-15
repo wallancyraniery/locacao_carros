@@ -27,6 +27,10 @@ O desenvolvimento comum usa PostgreSQL local e `npm run dev`. O Supabase é um P
 
 Os dados editoriais do catálogo — nome, imagem e especificações — permanecem estáticos. Antes de renderizar CTAs, o servidor consulta somente os UUIDs demonstrativos disponíveis no banco e combina as duas fontes. Um veículo sem confirmação aparece com interesse indisponível e não renderiza o formulário; a Server Action repete a verificação no envio para cobrir mudanças concorrentes. Erros de consulta falham fechado. A fixture remota controlada existe somente para homologar o fluxo sintético autorizado.
 
+## Central privada
+
+A [Central de Interessados](central_interessados.md) usa Supabase Auth SSR com cookies, validação server-side e Data API com JWT do usuário. A associação administrativa em `organization_memberships` e RLS limitam a leitura à organização. Essa conexão é separada do intake PostgreSQL e não utiliza sua role nem credenciais administrativas.
+
 ## Decisões estáveis
 
 - Dados do formulário passam pelo servidor; a aplicação não usa credencial administrativa.

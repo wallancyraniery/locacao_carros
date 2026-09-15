@@ -247,12 +247,13 @@ describe("contrato de acesso do runtime", () => {
     });
   });
 
-  it("mantém anon e authenticated sem acesso", async () => {
+  it("mantém anon sem leitura e authenticated sem associação isolado", async () => {
     for (const role of ["anon", "authenticated"]) {
       await sql.unsafe(`set role ${role}`);
       try {
         await expect(sql`select id from organizations`).rejects.toThrow();
-        await expect(sql`select id from vehicles`).rejects.toThrow();
+        if (role === "anon") await expect(sql`select id from vehicles`).rejects.toThrow();
+        else expect(await sql`select id from vehicles`).toHaveLength(0);
         await expect(sql`insert into rental_leads (id, operation_id, organization_id, full_name, phone, city, has_definitive_license, status) values (${crypto.randomUUID()}, ${crypto.randomUUID()}, ${demoOrganizationId}, 'Pessoa', '(12) 99999-9999', 'Cidade', true, 'new')`).rejects.toThrow();
       } finally { await sql`reset role`; }
     }

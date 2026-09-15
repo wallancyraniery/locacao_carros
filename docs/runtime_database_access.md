@@ -43,7 +43,7 @@ A role recebe somente:
 
 `PUBLIC` não mantém privilégios nas quatro tabelas nem nas sequences pertencentes a elas. Se `PUBLIC` possuir `CREATE` no schema `public`, a migration interrompe sem alterar esse privilégio global. Não há `SELECT`, `UPDATE`, `DELETE`, `TRUNCATE` ou `REFERENCES` em `rental_leads`, nem acesso a `lead_status_history`.
 
-Cada operação possui uma policy permissiva mínima e uma guarda `AS RESTRICTIVE`. Assim, uma policy permissiva futura não remove as condições de organização demonstrativa, veículo demonstrativo disponível e status `new`. `anon` e `authenticated` permanecem sem acesso. Não são usadas funções `SECURITY DEFINER` ou a Data API.
+Cada operação possui uma policy permissiva mínima e uma guarda `AS RESTRICTIVE`. Assim, uma policy permissiva futura não remove as condições de organização demonstrativa, veículo demonstrativo disponível e status `new`. `anon` permanece sem acesso. A migration 0005 concede a `authenticated` leitura limitada por associação na [Central privada](central_interessados.md), sem alterar esta role runtime. O formulário público não usa funções `SECURITY DEFINER` nem a Data API.
 
 ## FORCE ROW LEVEL SECURITY
 
