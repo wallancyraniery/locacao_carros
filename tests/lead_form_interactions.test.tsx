@@ -3,7 +3,8 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const { submitLeadAction } = vi.hoisted(() => ({
   submitLeadAction: vi.fn(async (_state: unknown, formData: FormData): Promise<{
-    status: "error";
+    status: "error" | "success";
+    whatsappUrl?: string;
     message: string;
     values?: Record<string, string>;
     turnstileResetId?: string;
@@ -119,3 +120,25 @@ describe("interações do formulário de interesse", () => {
     Reflect.deleteProperty(window, "turnstile");
   });
 });
+
+ it.each([
+   { status: "error" as const, message: "Falha sintética" },
+   { status: "success" as const, message: "Sucesso" },
+   { status: "success" as const, message: "Sucesso", whatsappUrl: "https://wa.me/5511999990000?text=Mensagem%20gen%C3%A9rica" },
+ ])("exibe continuidade somente no sucesso com URL retornada pelo servidor: %o", async (result) => {
+   submitLeadAction.mockResolvedValueOnce(result);
+   const { container } = render(<LeadForm vehicleId="20000000-0000-4000-8000-000000000003"
+     vehicleName="Veículo sintético" operationId="40000000-0000-4000-8000-000000000001"
+     turnstileIdempotencyKey="50000000-0000-4000-8000-000000000001" turnstile={{ mode: "local" }} />);
+   expect(screen.queryByRole("link", { name: /Continuar pelo WhatsApp/ })).toBeNull();
+   fireEvent.click(container.querySelector<HTMLButtonElement>('button[data-intent="submit-interest"]')!);
+   await screen.findByText(result.message);
+   const link = result.whatsappUrl
+     ? await screen.findByRole("link", { name: /Continuar pelo WhatsApp/ })
+     : screen.queryByRole("link", { name: /Continuar pelo WhatsApp/ });
+   if (result.whatsappUrl) {
+     expect(link).toHaveAttribute("href", result.whatsappUrl);
+     expect(link).toHaveAttribute("rel", "noopener noreferrer");
+     expect(screen.getByText(/Você decide se deseja enviar/)).toBeInTheDocument();
+   } else expect(link).toBeNull();
+ });

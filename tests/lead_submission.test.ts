@@ -237,3 +237,60 @@ describe("envio de interesse", () => {
     expect(drizzleRepository.createLead).not.toHaveBeenCalled();
   });
 });
+
+ describe("continuidade opcional após persistência", () => {
+  afterEach(() => vi.unstubAllEnvs());
+  beforeEach(() => {
+    vi.stubEnv("WHATSAPP_BUSINESS_NUMBER", "5511999990000");
+    turnstileProtection.verify.mockReset().mockResolvedValue(true);
+    drizzleRepository.findAvailableDemoVehicle.mockReset().mockResolvedValue({ id: validInput.vehicleId, organizationId: "10000000-0000-4000-8000-000000000001" });
+    drizzleRepository.createLead.mockReset().mockResolvedValue({ id: "30000000-0000-4000-8000-000000000001" });
+  });
+
+  it("aguarda persistência e constrói URL genérica sem dados ou identificadores do interessado", async () => {
+    let persist!: () => void;
+    drizzleRepository.createLead.mockImplementationOnce(() => new Promise((resolve) => {
+      persist = () => resolve({ id: "30000000-0000-4000-8000-000000000001" });
+    }));
+    const form = formDataFromValidInput();
+    form.set("WHATSAPP_BUSINESS_NUMBER", "5500000000000");
+    let finished = false;
+    const pending = submitLeadAction({ status: "idle" }, form).then((value) => { finished = true; return value; });
+    await vi.waitFor(() => expect(drizzleRepository.createLead).toHaveBeenCalledOnce());
+    expect(finished).toBe(false);
+    persist();
+    const result = await pending;
+    expect(result.status).toBe("success");
+    const url = new URL(result.whatsappUrl!);
+    expect(url.origin).toBe("https://wa.me");
+    expect(url.pathname).toBe("/5511999990000");
+    expect([...url.searchParams]).toEqual([["text", "Olá! Gostaria de conversar sobre locação de um veículo."]]);
+    for (const value of [
+      validInput.fullName.trim(), validInput.phone, validInput.email, validInput.city,
+      validInput.operationId, validInput.vehicleId, "30000000-0000-4000-8000-000000000001",
+    ]) {
+      expect(decodeURIComponent(url.href)).not.toContain(value);
+    }
+  });
+
+  it.each([undefined, "", "abc", "+5511999990000", "5511999990000?text=privado", "0123456789", "1".repeat(16)])("omite ação com configuração ausente ou inválida: %s", async (number) => {
+    vi.stubEnv("WHATSAPP_BUSINESS_NUMBER", number);
+    const result = await submitLeadAction({ status: "idle" }, formDataFromValidInput());
+    expect(result.status).toBe("success");
+    expect(result).not.toHaveProperty("whatsappUrl");
+  });
+
+  it.each(["honeypot", "validation", "protection", "unavailable", "insert"])("não oferece ação em %s", async (scenario) => {
+    const form = formDataFromValidInput();
+    if (scenario === "honeypot") form.set("website", "bot");
+    if (scenario === "validation") form.set("fullName", "");
+    if (scenario === "protection") turnstileProtection.verify.mockResolvedValueOnce(false);
+    if (scenario === "unavailable") drizzleRepository.findAvailableDemoVehicle.mockResolvedValueOnce(null);
+    if (scenario === "insert") drizzleRepository.createLead.mockRejectedValueOnce(new Error("Falha sintética"));
+    const log = vi.spyOn(console, "error").mockImplementation(() => undefined);
+    try {
+      const result = await submitLeadAction({ status: "success", whatsappUrl: "https://wa.me/5511999990000" }, form);
+      expect(result).not.toHaveProperty("whatsappUrl");
+    } finally { log.mockRestore(); }
+  });
+});

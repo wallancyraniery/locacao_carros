@@ -11,7 +11,6 @@ vi.mock("@/modules/leads/infrastructure/drizzle_lead_repository.server", () => (
   drizzleLeadRepository: drizzleRepository,
 }));
 
-import { submitLeadAction } from "@/modules/leads/actions/submit_lead_action";
 
 const projectRef = "abcdefghijklmnopqrst";
 const syntheticPem = [
@@ -59,6 +58,8 @@ function validFormData() {
 
 describe("integração local dos gates públicos", () => {
   beforeEach(() => {
+    vi.resetModules();
+    vi.stubEnv("WHATSAPP_BUSINESS_NUMBER", "5511999990000");
     for (const field of [
       "DATABASE_URL", "MIGRATION_DATABASE_URL", "TEST_DATABASE_URL", "POSTGRES_PASSWORD",
       "SUPABASE_MIGRATION_DATABASE_URL", "SUPABASE_SECRET_KEY",
@@ -76,12 +77,42 @@ describe("integração local dos gates públicos", () => {
     vi.unstubAllGlobals();
   });
 
+  it("oferece WhatsApp após persistência com o contrato completo de produção", async () => {
+    vi.stubEnv("PRIVACY_CONTROLLER_NAME", "Locadora oficial sintética");
+    vi.stubEnv("PRIVACY_CONTACT_LABEL", "Canal oficial de privacidade");
+    vi.stubEnv("PRIVACY_CONTACT_URL", "mailto:privacidade@locadora.com.br");
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({ success: true, hostname: "locadora.example.test", action: "submit_lead" }),
+    });
+    vi.stubGlobal("fetch", fetchMock);
+    drizzleRepository.findAvailableDemoVehicle.mockResolvedValue({
+      id: "20000000-0000-4000-8000-000000000003",
+      organizationId: "10000000-0000-4000-8000-000000000001",
+    });
+    drizzleRepository.createLead.mockResolvedValue({ id: "30000000-0000-4000-8000-000000000001" });
+    const { submitLeadAction } = await import("@/modules/leads/actions/submit_lead_action");
+
+    const result = await submitLeadAction({ status: "idle" }, validFormData());
+
+    expect(result.status).toBe("success");
+    expect(fetchMock).toHaveBeenCalledOnce();
+    expect(drizzleRepository.createLead).toHaveBeenCalledOnce();
+    const url = new URL(result.whatsappUrl!);
+    expect(url.origin).toBe("https://wa.me");
+    expect(url.pathname).toBe("/5511999990000");
+    expect([...url.searchParams]).toEqual([["text", "Olá! Gostaria de conversar sobre locação de um veículo."]]);
+  });
+
   it("recusa submissão direta sem privacidade oficial antes de rede ou banco", async () => {
     const fetchMock = vi.fn();
     vi.stubGlobal("fetch", fetchMock);
     const consoleError = vi.spyOn(console, "error").mockImplementation(() => undefined);
 
-    const result = await submitLeadAction({ status: "idle" }, validFormData());
+    const { submitLeadAction } = await import("@/modules/leads/actions/submit_lead_action");
+    const result = await submitLeadAction({ status: "success", whatsappUrl: "https://wa.me/5511999990000" }, validFormData());
+
+    expect(result).not.toHaveProperty("whatsappUrl");
 
     expect(result).toMatchObject({
       status: "error",
