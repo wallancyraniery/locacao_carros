@@ -166,3 +166,7 @@ O próximo ciclo deve preparar proteção contra abuso, privacidade e operação
 ## Autor
 
 Wallancy Raniery
+
+## Central de Interessados
+
+Acesso privado em `/admin/login`, com listagem por organização em `/admin/interessados`. Consulte [configuração, associação administrativa e limites da entrega](docs/central_interessados.md).

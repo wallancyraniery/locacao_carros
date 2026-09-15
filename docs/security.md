@@ -2,7 +2,7 @@
 
 ## Modelo de acesso
 
-O banco segue least privilege. Operações administrativas e migrations usam credencial própria; a aplicação usa exclusivamente `lead_intake_runtime`. Nenhuma credencial administrativa pode ser usada como fallback do runtime ou incorporada à aplicação.
+O banco segue least privilege. Operações administrativas e migrations usam credencial própria; o formulário público usa exclusivamente `lead_intake_runtime`. A Central privada usa chave publishable e JWT individual, com associação por organização e RLS; veja [central_interessados.md](central_interessados.md). Nenhuma credencial administrativa pode ser usada como fallback do runtime ou incorporada à aplicação.
 
 No Supabase de homologação, o runtime conecta pelo Transaction Pooler na porta 6543, com TLS `verify-full`, CA explícita e verificação de identidade. Preserve esses requisitos. A role não possui privilégios administrativos, bypass de RLS ou ownership.
 

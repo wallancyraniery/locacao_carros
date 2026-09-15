@@ -65,3 +65,17 @@ fieldset { margin:0 0 22px; padding:0; border:0; }
 .detail-action { width:100%; margin-top:10px; }
 @media (max-width:900px) { .vehicle-detail { grid-template-columns:minmax(0,1fr); } .detail-heading { flex-direction:column; } }
 @media (max-width:520px) { .detail-specs, .detail-terms dl { grid-template-columns:1fr; } }
+
+.admin-shell { max-width: 1280px; margin: 0 auto; padding: 2rem 1rem; }
+.admin-login { max-width: 440px; margin: 3rem auto; }
+.admin-heading, .admin-pagination { display: flex; align-items: center; justify-content: space-between; gap: 1rem; margin-bottom: 2rem; }
+.admin-table-scroll { overflow-x: auto; }
+.admin-table { width: 100%; border-collapse: collapse; text-align: left; }
+.admin-table caption { text-align: left; padding: 1rem 0; }
+.admin-table th, .admin-table td { padding: 1rem .75rem; border-bottom: 1px solid #d8dde3; vertical-align: top; }
+.admin-table th { background: #f3f5f7; color: #17212e; }
+.admin-pagination { margin-top: 1.5rem; }
+
+.admin-shell h1 { font-size: clamp(1.8rem, 4vw, 2.8rem); line-height: 1.15; letter-spacing: -.03em; }
+.admin-pagination a { color: var(--text); text-decoration: underline; }
+.admin-shell button:disabled { opacity: .65; cursor: wait; }
