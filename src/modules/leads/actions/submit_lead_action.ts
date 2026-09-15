@@ -1,6 +1,7 @@
 "use server";
 
 import { randomUUID } from "node:crypto";
+import { getPrivacyNoticeConfiguration } from "@/config/privacy_notice_environment.server";
 import { submitLead, type SubmitLeadResult } from "../application/submit_lead";
 import type { LeadFormState } from "../components/lead_form_state";
 import { drizzleLeadRepository } from "../infrastructure/drizzle_lead_repository.server";
@@ -15,6 +16,7 @@ export async function submitLeadAction(_state: LeadFormState, formData: FormData
   ].includes(key)));
   let result: SubmitLeadResult;
   try {
+    getPrivacyNoticeConfiguration();
     result = await submitLead(drizzleLeadRepository, turnstileSubmissionProtection, values as LeadSubmissionInput);
   } catch (error) {
     reportUnexpectedLeadSubmissionError(error);
