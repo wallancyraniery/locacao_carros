@@ -8,6 +8,8 @@ No Supabase de homologação, o runtime conecta pelo Transaction Pooler na porta
 
 RLS e grants mínimos permitem à runtime consultar somente a organização e o veículo necessários e inserir apenas as colunas autorizadas do lead. A leitura de `rental_leads` permanece negada. A descrição completa de memberships, policies, grants, provisionamento, rotação e revogação está em [runtime_database_access.md](runtime_database_access.md).
 
+O Supabase mantém `public.rls_auto_enable()` como função `SECURITY DEFINER` vinculada ao event trigger `ensure_rls`. A migration 0006 preserva esse mecanismo e revoga somente a chamada direta da função por `PUBLIC`, `anon` e `authenticated`. A migration é condicional para permanecer aplicável no PostgreSQL local sem o helper. `lead_status_history` continua com RLS habilitado, sem policy e sem grants para essas roles.
+
 ## Dados e observabilidade
 
 - Nunca versione senha, URL real de conexão, conteúdo de `.env`, certificado ou outro secret.
