@@ -43,6 +43,13 @@
       "when": 1789497789029,
       "tag": "0005_central_interessados",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1789515747391,
+      "tag": "0006_restrict_rls_auto_enable_execute",
+      "breakpoints": true
     }
   ]
 }
