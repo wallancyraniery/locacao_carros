@@ -4,6 +4,8 @@ Aplicação web para apresentar veículos e registrar o interesse de motoristas 
 
 O projeto foi desenvolvido como uma aplicação prática de engenharia de software, com foco em backend, banco de dados, validação no servidor, testes e organização de ambiente. A interface ainda trabalha com dados demonstrativos, mas o fluxo de interesse já possui persistência em PostgreSQL.
 
+O [primeiro checkpoint de Reservas e Disponibilidade](docs/reservations_availability.md) acrescenta o núcleo de solicitações, agenda, lista de espera e outbox no PostgreSQL, com isolamento entre locadoras e proteção contra sobreposição. Ainda não há UI ou API operacional de reservas; o formulário existente continua registrando interesse.
+
 ## Estado atual
 
 O projeto está em desenvolvimento e ainda não representa um serviço comercial em produção.

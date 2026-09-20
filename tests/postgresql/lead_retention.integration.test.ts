@@ -1,5 +1,5 @@
 import postgres from "postgres";
-import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from "vitest";
 import { parseTestDatabaseEnvironment } from "@/config/test_database_environment";
 import { leadRetentionConfirmation, runLeadRetention } from "../../scripts/lead_retention.mjs";
 import { createPostgresLeadRetentionAdapter } from "../../scripts/lead_retention_postgres.mjs";
@@ -126,4 +126,119 @@ describe("retenção administrativa de leads no PostgreSQL", () => {
       }
     });
   });
+});
+
+describe("retenção preserva vínculos operacionais", () => {
+  let sql: ReturnType<typeof postgres>;
+  let writer: ReturnType<typeof postgres>;
+  let org: string, vehicle: string, ids: string[];
+  const validations = {
+    validateTarget: async () => undefined,
+    validateMigrations: async () => undefined,
+    validateStructure: async () => undefined,
+  };
+  beforeAll(() => {
+    const { testDatabaseUrl } = parseTestDatabaseEnvironment(process.env);
+    sql = postgres(testDatabaseUrl, { max: 1 });
+    writer = postgres(testDatabaseUrl, { max: 1 });
+  });
+  beforeEach(async () => {
+    org = crypto.randomUUID(); vehicle = crypto.randomUUID();
+    ids = [crypto.randomUUID(), crypto.randomUUID(), crypto.randomUUID()];
+    await sql`insert into organizations (id, name, slug) values (${org}, 'Retenção sintética operacional', ${`retention_links_${org}`})`;
+    await sql`insert into vehicles (id, organization_id, brand, model, year, color, weekly_price_cents, status)
+      values (${vehicle}, ${org}, 'Marca', 'Modelo', 2024, 'Prata', 70000, 'available')`;
+    for (const id of ids) {
+      await sql`insert into rental_leads (id, operation_id, organization_id, full_name, phone, city, has_definitive_license, created_at)
+        values (${id}, ${crypto.randomUUID()}, ${org}, 'Pessoa sintética', '000000000', 'Cidade', true, now() - interval '120 days')`;
+      await sql`insert into lead_status_history (organization_id, rental_lead_id, to_status) values (${org}, ${id}, 'contacted')`;
+    }
+  });
+  afterEach(async () => {
+    await sql.begin(async (tx) => {
+      await tx`delete from notification_outbox where organization_id = ${org}`;
+      await tx`delete from vehicle_schedule_blocks where organization_id = ${org}`;
+      await tx`delete from reservation_requests where organization_id = ${org}`;
+      await tx`delete from waitlist_entries where organization_id = ${org}`;
+      await tx`delete from lead_status_history where organization_id = ${org}`;
+      await tx`delete from rental_leads where organization_id = ${org}`;
+      await tx`delete from vehicles where organization_id = ${org}`;
+      await tx`delete from organizations where id = ${org}`;
+    });
+  });
+  afterAll(async () => { await Promise.all([sql.end(), writer.end()]); });
+
+  async function linkBoth() {
+    await sql`insert into reservation_requests (organization_id, vehicle_id, lead_id, pickup_date, return_date)
+      values (${org}, ${vehicle}, ${ids[1]}, '2027-01-10', '2027-01-15')`;
+    await sql`insert into waitlist_entries (organization_id, vehicle_id, lead_id, pickup_date, return_date)
+      values (${org}, ${vehicle}, ${ids[2]}, '2027-01-10', '2027-01-15')`;
+  }
+
+  it.each([false, true])("remove A, preserva B/reserva e C/waitlist e seus históricos (cancelados: %s)", async (cancelled) => {
+    await linkBoth();
+    if (cancelled) {
+      const actor = crypto.randomUUID();
+      await sql`update reservation_requests set status = 'approved', decided_by = ${actor} where organization_id = ${org}`;
+      await sql`update reservation_requests set status = 'cancelled', cancelled_by = ${actor} where organization_id = ${org}`;
+      await sql`update waitlist_entries set status = 'cancelled' where organization_id = ${org}`;
+    }
+    const adapter = createPostgresLeadRetentionAdapter(sql, validations);
+    const preview = await adapter.preview(org, 90);
+    expect(preview.candidates).toBe(1);
+    expect(preview.candidateIds).toEqual([ids[0]]);
+    expect(await runLeadRetention(adapter, { organizationId: org, execute: true, confirmation: leadRetentionConfirmation }))
+      .toMatchObject({ deletedLeads: 1, deletedHistory: 1, preservedLinked: 0, remainingCandidates: 0 });
+    expect((await sql`select id from rental_leads where organization_id = ${org}`).map((r) => r.id).sort()).toEqual(ids.slice(1).sort());
+    expect(await sql`select id from lead_status_history where organization_id = ${org}`).toHaveLength(2);
+    expect((await adapter.preview(org, 90)).candidates).toBe(0);
+  });
+
+  it("vínculos criados depois do preview preservam B/C e não impedem excluir A", async () => {
+    const base = createPostgresLeadRetentionAdapter(sql, validations);
+    const adapter = {
+      ...base,
+      async preview(id: string, days: number) {
+        const preview = await base.preview(id, days);
+        expect(preview.candidates).toBe(3);
+        await linkBoth();
+        return preview;
+      },
+    };
+    expect(await runLeadRetention(adapter, { organizationId: org, execute: true, confirmation: leadRetentionConfirmation }))
+      .toMatchObject({ deletedLeads: 1, deletedHistory: 1, preservedLinked: 2, remainingCandidates: 0 });
+    expect((await sql`select id from rental_leads where organization_id = ${org}`).map((r) => r.id).sort()).toEqual(ids.slice(1).sort());
+  });
+
+  it.each(["reservation", "waitlist"])("reconsulta vínculo %s confirmado enquanto aguarda o lock do lead", async (kind) => {
+    const adapter = createPostgresLeadRetentionAdapter(sql, validations);
+    const preview = await adapter.preview(org, 90);
+    const [retention] = await sql`select pg_backend_pid() as pid`;
+    let deletion!: ReturnType<typeof adapter.deleteEligible>;
+    await writer.begin(async (tx) => {
+      await tx`set local statement_timeout = '4s'`;
+      if (kind === "reservation") {
+        await tx`insert into reservation_requests (organization_id, vehicle_id, lead_id, pickup_date, return_date)
+          values (${org}, ${vehicle}, ${ids[1]}, '2027-01-10', '2027-01-15')`;
+      } else {
+        await tx`insert into waitlist_entries (organization_id, vehicle_id, lead_id, pickup_date, return_date)
+          values (${org}, ${vehicle}, ${ids[1]}, '2027-01-10', '2027-01-15')`;
+      }
+      deletion = adapter.deleteEligible(org, 90, preview.candidates, preview.candidateFingerprint, preview.candidateIds);
+      // Attach a rejection handler immediately; the assertion below still observes failures.
+      void deletion.catch(() => undefined);
+      let blocked = false;
+      const deadline = Date.now() + 3000;
+      while (!blocked && Date.now() < deadline) {
+        const [row] = await tx`select pg_backend_pid() = any(pg_blocking_pids(${retention.pid})) as blocked`;
+        blocked = row.blocked;
+        if (!blocked) await new Promise((resolve) => setTimeout(resolve, 10));
+      }
+      expect(blocked).toBe(true);
+      // Commit the FK reference, then allow retention to acquire FOR UPDATE and re-read.
+    });
+    expect(await deletion).toMatchObject({ deletedLeads: 2, deletedHistory: 2, preservedLinked: 1, remainingCandidates: 0 });
+    expect(await sql`select id from rental_leads where organization_id = ${org}`).toEqual([{ id: ids[1] }]);
+    expect(await sql`select rental_lead_id from lead_status_history where organization_id = ${org}`).toEqual([{ rental_lead_id: ids[1] }]);
+  }, 10000);
 });

@@ -1,4 +1,4 @@
-import { check, foreignKey, index, integer, pgTable, text, timestamp, uuid, boolean } from "drizzle-orm/pg-core";
+import { check, foreignKey, index, integer, pgTable, text, timestamp, uuid, boolean, unique } from "drizzle-orm/pg-core";
 import { sql } from "drizzle-orm";
 import { organizations } from "./organizations";
 import { vehicleStatusEnum } from "./enums";
@@ -17,6 +17,7 @@ export const vehiclesTable = pgTable("vehicles", {
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
 }, (table) => [
+  unique("vehicles_organization_id_id_unique").on(table.organizationId, table.id),
   foreignKey({ name: "vehicles_organization_id_fk", columns: [table.organizationId], foreignColumns: [organizations.id] }).onDelete("restrict"),
   check("vehicles_weekly_price_cents_non_negative_check", sql`${table.weeklyPriceCents} >= 0`),
   check("vehicles_year_reasonable_check", sql`${table.year} between 1900 and 2200`),

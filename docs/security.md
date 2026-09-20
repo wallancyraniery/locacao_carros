@@ -12,6 +12,8 @@ O Supabase mantém `public.rls_auto_enable()` como função `SECURITY DEFINER` v
 
 ## Dados e observabilidade
 
+As tabelas do [núcleo de reservas](reservations_availability.md) têm RLS habilitado sem policies e sem grants às roles públicas, autenticadas ou de intake. FKs compostas garantem organização consistente em veículos, leads e solicitações. Os triggers usam `SECURITY INVOKER`, sem ampliar acesso ou criar credenciais. Autorização operacional, validação da identidade de quem decide e retenção conjunta ainda precisam ser implementadas antes de uso pela aplicação. A outbox guarda identificadores e códigos limitados, sem contatos ou respostas brutas de provedores.
+
 - Nunca versione senha, URL real de conexão, conteúdo de `.env`, certificado ou outro secret.
 - Nunca registre FormData, nome, telefone, e-mail, cidade, query com valores, CA, URL, stack ou detalhes que possam conter dados do usuário.
 - Falhas inesperadas do fluxo de lead registram somente `{ stage, code }`, com código sanitizado e mensagem pública genérica.

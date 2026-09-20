@@ -31,9 +31,10 @@ export async function runLeadRetention(adapter, options) {
   }
 
   const result = await adapter.deleteEligible(
-    options.organizationId, leadRetentionDays, preview.candidates, preview.candidateFingerprint,
+    options.organizationId, leadRetentionDays, preview.candidates, preview.candidateFingerprint, preview.candidateIds,
   );
-  if (result.remainingCandidates !== 0 || result.deletedLeads !== preview.candidates) {
+  if (result.remainingCandidates !== 0 || !Number.isInteger(result.preservedLinked) || result.preservedLinked < 0
+      || result.deletedLeads + result.preservedLinked !== preview.candidates) {
     throw new LeadRetentionError("POST_DELETE_DIVERGENCE");
   }
   return { status: "deleted", ...result };

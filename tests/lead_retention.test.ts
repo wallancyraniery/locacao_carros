@@ -17,11 +17,11 @@ function adapter(candidates = 2) {
     validateStructure: vi.fn(async () => { events.push("validateStructure"); }),
     preview: vi.fn(async (id, days) => {
       events.push("preview");
-      return { organizationId: id, retentionDays: days, candidates, candidateFingerprint: "synthetic-fingerprint" };
+      return { organizationId: id, retentionDays: days, candidates, candidateFingerprint: "synthetic-fingerprint", candidateIds: Array.from({ length: candidates }, (_, i) => `synthetic-${i}`) };
     }),
     deleteEligible: vi.fn(async (id, days) => {
       events.push("deleteEligible");
-      return { organizationId: id, retentionDays: days, deletedLeads: candidates, deletedHistory: 1, remainingCandidates: 0 };
+      return { organizationId: id, retentionDays: days, deletedLeads: candidates, deletedHistory: 1, remainingCandidates: 0, preservedLinked: 0 };
     }),
   };
   return { implementation, events };
@@ -49,7 +49,7 @@ describe("procedimento controlado de retenção", () => {
       organizationId, execute: true, confirmation: leadRetentionConfirmation,
     })).resolves.toMatchObject({ status: "deleted", deletedLeads: 2, remainingCandidates: 0 });
     expect(events).toEqual(["validateTarget", "validateMigrations", "validateStructure", "preview", "deleteEligible"]);
-    expect(implementation.deleteEligible).toHaveBeenCalledWith(organizationId, 90, 2, "synthetic-fingerprint");
+    expect(implementation.deleteEligible).toHaveBeenCalledWith(organizationId, 90, 2, "synthetic-fingerprint", ["synthetic-0", "synthetic-1"]);
   });
 
   it.each(["validateTarget", "validateMigrations", "validateStructure"] as const)("não escreve quando %s falha", async (stage) => {
@@ -72,11 +72,22 @@ describe("procedimento controlado de retenção", () => {
   it("recusa divergência posterior sem expor dados", async () => {
     const { implementation } = adapter();
     vi.mocked(implementation.deleteEligible).mockResolvedValueOnce({
-      organizationId, retentionDays: 90, deletedLeads: 1, deletedHistory: 0, remainingCandidates: 1,
+      organizationId, retentionDays: 90, deletedLeads: 1, deletedHistory: 0, remainingCandidates: 1, preservedLinked: 0,
     });
     await expect(runLeadRetention(implementation, {
       organizationId, execute: true, confirmation: leadRetentionConfirmation,
     })).rejects.toMatchObject({ code: "POST_DELETE_DIVERGENCE" });
+  });
+
+  it("aceita candidatos preservados por vínculo novo sem expor os IDs internos", async () => {
+    const { implementation } = adapter();
+    vi.mocked(implementation.deleteEligible).mockResolvedValueOnce({
+      organizationId, retentionDays: 90, deletedLeads: 1, deletedHistory: 0, remainingCandidates: 0, preservedLinked: 1,
+    });
+    const result = await runLeadRetention(implementation, { organizationId, execute: true, confirmation: leadRetentionConfirmation });
+    expect(result).toMatchObject({ deletedLeads: 1, preservedLinked: 1 });
+    expect(result).not.toHaveProperty("candidateIds");
+    expect(result).not.toHaveProperty("candidateFingerprint");
   });
 
   it("mantém executável administrativo explícito e logs sanitizados", () => {
