@@ -156,7 +156,7 @@ it("valida a conexão exclusiva do runtime Supabase sem escrever dados", async (
     diagnostic.policiesMatch = true;
 
     stage = "vehicle_query";
-    const vehicles = await sql`SELECT id, organization_id, status, is_demo
+    const vehicles = await sql`SELECT id, organization_id, status, operational_status, is_demo
       FROM public.vehicles LIMIT 1`;
     diagnostic.vehicleQueryAllowed = true;
     diagnostic.availableVehicleObserved = vehicles.length === 1;

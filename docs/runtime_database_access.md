@@ -38,7 +38,7 @@ A role recebe somente:
 
 - `USAGE` no schema `public`;
 - `SELECT (id)` em `organizations`;
-- `SELECT (id, organization_id, status, is_demo)` em `vehicles`;
+- `SELECT (id, organization_id, status, operational_status, is_demo)` em `vehicles`;
 - `INSERT` apenas nas colunas utilizadas pelo formulário em `rental_leads`.
 
 `PUBLIC` não mantém privilégios nas quatro tabelas nem nas sequences pertencentes a elas. Se `PUBLIC` possuir `CREATE` no schema `public`, a migration interrompe sem alterar esse privilégio global. Não há `SELECT`, `UPDATE`, `DELETE`, `TRUNCATE` ou `REFERENCES` em `rental_leads`, nem acesso a `lead_status_history`.
@@ -71,4 +71,4 @@ Erros inesperados mantêm a mensagem pública genérica. O servidor registra som
 
 Para repetir uma homologação, autorize uma nova submissão sintética com marcador exclusivo, confirme-a administrativamente em modo somente leitura e verifique novamente a recusa de SELECT pela runtime. Não use a credencial administrativa na aplicação.
 
-No formulário atual, disponibilidade é verificada no momento da manifestação de interesse. O envio não reserva o veículo e a disponibilidade final depende de confirmação humana. O [checkpoint 1 de Reservas e Disponibilidade](reservations_availability.md) introduz separadamente aprovação atômica e exclusão de sobreposições no PostgreSQL, ainda sem integração com o runtime. A migration 0007 não concede acesso às novas tabelas à `lead_intake_runtime` nem à Central; as fronteiras de credenciais descritas aqui permanecem iguais. A validação desse núcleo é local e não comprova aplicação remota.
+No formulário atual, elegibilidade estrutural é verificada por `operational_status = active`; isso não promete disponibilidade para um período. Durante o expand/contract, as policies restritivas também mantêm `status = available` como guarda legada fail-closed. O envio não reserva o veículo e a disponibilidade final depende de confirmação humana. A migration 0007 não concede acesso às tabelas de reservas à `lead_intake_runtime` nem à Central; a 0008 acrescenta somente leitura da nova coluna à runtime. A validação desse núcleo é local e não comprova aplicação remota.

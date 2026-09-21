@@ -8,12 +8,14 @@ const actor = crypto.randomUUID();
 describe("Reservas e disponibilidade: invariantes PostgreSQL", () => {
   let sql: ReturnType<typeof postgres>;
   let concurrent: ReturnType<typeof postgres>;
+  let observer: ReturnType<typeof postgres>;
   let orgs: string[], vehicles: string[], leads: string[];
 
   beforeAll(() => {
     const { testDatabaseUrl } = parseTestDatabaseEnvironment(process.env);
     sql = postgres(testDatabaseUrl, { max: 1 });
     concurrent = postgres(testDatabaseUrl, { max: 1 });
+    observer = postgres(testDatabaseUrl, { max: 1 });
   });
   beforeEach(async () => {
     orgs = [crypto.randomUUID(), crypto.randomUUID()];
@@ -21,8 +23,8 @@ describe("Reservas e disponibilidade: invariantes PostgreSQL", () => {
     leads = [crypto.randomUUID(), crypto.randomUUID()];
     for (let i = 0; i < 2; i++) {
       await sql`insert into organizations (id, name, slug) values (${orgs[i]}, 'Locadora sintética', ${`reservation_${orgs[i]}`})`;
-      await sql`insert into vehicles (id, organization_id, brand, model, year, color, weekly_price_cents, status)
-        values (${vehicles[i]}, ${orgs[i]}, 'Marca sintética', 'Modelo', 2024, 'Prata', 70000, 'available')`;
+      await sql`insert into vehicles (id, organization_id, brand, model, year, color, weekly_price_cents, status, operational_status)
+        values (${vehicles[i]}, ${orgs[i]}, 'Marca sintética', 'Modelo', 2024, 'Prata', 70000, 'available', 'active')`;
       await sql`insert into rental_leads (id, operation_id, organization_id, full_name, phone, city, has_definitive_license)
         values (${leads[i]}, ${crypto.randomUUID()}, ${orgs[i]}, 'Pessoa sintética', '000000000', 'Cidade sintética', true)`;
     }
@@ -39,7 +41,7 @@ describe("Reservas e disponibilidade: invariantes PostgreSQL", () => {
       await tx`delete from organizations where id = any(${orgs}::uuid[])`;
     });
   });
-  afterAll(async () => { await Promise.all([sql?.end(), concurrent?.end()]); });
+  afterAll(async () => { await Promise.all([sql?.end(), concurrent?.end(), observer?.end()]); });
 
   async function request(pickup = "2027-01-10", end = "2027-01-15", tenant = 0) {
     const [row] = await sql`insert into reservation_requests (organization_id, vehicle_id, lead_id, pickup_date, return_date)
@@ -59,6 +61,14 @@ describe("Reservas e disponibilidade: invariantes PostgreSQL", () => {
   }
   async function activeBlocks() {
     return sql`select id from vehicle_schedule_blocks where organization_id = ${orgs[0]} and status = 'active'`;
+  }
+  async function waitUntilBlocked(applicationName: string) {
+    for (let attempt = 0; attempt < 100; attempt++) {
+      const [activity] = await observer`select wait_event_type from pg_stat_activity where application_name = ${applicationName}`;
+      if (activity?.wait_event_type === "Lock") return;
+      await new Promise((resolve) => setTimeout(resolve, 10));
+    }
+    throw new Error(`Transação ${applicationName} não aguardou lock`);
   }
 
   it.each(["reservation_requests", "vehicle_schedule_blocks", "waitlist_entries"])("%s exige intervalo finito e estritamente positivo", async (table) => {
@@ -121,6 +131,23 @@ describe("Reservas e disponibilidade: invariantes PostgreSQL", () => {
     expect(await sql`select id from notification_outbox where reservation_request_id = ${second} and event_type = 'reservation.approved'`).toHaveLength(0);
     await approve(first); // Same-state retry does not create another block/event.
     expect(await sql`select id from notification_outbox where reservation_request_id = ${first} and event_type = 'reservation.approved'`).toHaveLength(1);
+  });
+
+  it("recusa aprovação quando o veículo está estruturalmente inativo", async () => {
+    const id = await request();
+    await sql`update vehicles set operational_status = 'inactive' where id = ${vehicles[0]}`;
+    await expect(approve(id)).rejects.toMatchObject({ code: "23514", message: expect.stringContaining("reservation_vehicle_not_active") });
+    expect(await sql`select status from reservation_requests where id = ${id}`).toEqual([{ status: "requested" }]);
+    expect(await activeBlocks()).toHaveLength(0);
+    expect(await sql`select id from notification_outbox where reservation_request_id = ${id} and event_type = 'reservation.approved'`).toHaveLength(0);
+  });
+
+  it("aprovação e cancelamento preservam operational_status", async () => {
+    const id = await request();
+    await approve(id);
+    expect(await sql`select operational_status from vehicles where id = ${vehicles[0]}`).toEqual([{ operational_status: "active" }]);
+    await cancel(id);
+    expect(await sql`select operational_status from vehicles where id = ${vehicles[0]}`).toEqual([{ operational_status: "active" }]);
   });
 
   it.each(["maintenance", "preparation", "manual"])("bloqueio %s também impede aprovação e outro bloco sobreposto", async (kind) => {
@@ -243,8 +270,8 @@ describe("Reservas e disponibilidade: invariantes PostgreSQL", () => {
         values (${orgs[0]}, ${vehicles[0]}, ${id}, 'reservation', '2027-01-11', '2027-01-15', 'released', now())`;
     })).rejects.toMatchObject({ code: "23514" });
     const alternative = crypto.randomUUID();
-    await sql`insert into vehicles (id, organization_id, brand, model, year, color, weekly_price_cents, status)
-      values (${alternative}, ${orgs[0]}, 'Marca sintética', 'Alternativo', 2024, 'Prata', 70000, 'available')`;
+    await sql`insert into vehicles (id, organization_id, brand, model, year, color, weekly_price_cents, status, operational_status)
+      values (${alternative}, ${orgs[0]}, 'Marca sintética', 'Alternativo', 2024, 'Prata', 70000, 'available', 'active')`;
     await expect(sql.begin(async (tx) => {
       await tx`delete from vehicle_schedule_blocks where reservation_request_id = ${id}`;
       await tx`insert into vehicle_schedule_blocks (organization_id, vehicle_id, reservation_request_id, kind, pickup_date, return_date, status, released_at)
@@ -306,6 +333,62 @@ describe("Reservas e disponibilidade: invariantes PostgreSQL", () => {
     expect(failure.reason).toMatchObject({ code: "23P01" });
     expect(await activeBlocks()).toHaveLength(1);
     expect(await sql`select id from notification_outbox where organization_id = ${orgs[0]} and event_type = 'reservation.approved'`).toHaveLength(1);
+  }, 10000);
+
+  it("serializa aprovação e inativação pela ordem do lock do veículo", async () => {
+    const rejectedId = await request();
+    let releaseInactivation!: () => void;
+    const holdInactivation = new Promise<void>((resolve) => { releaseInactivation = resolve; });
+    let inactivationLocked!: () => void;
+    const inactivationReady = new Promise<void>((resolve) => { inactivationLocked = resolve; });
+    const inactivationFirst = sql.begin(async (tx) => {
+      await tx`update vehicles set operational_status = 'inactive' where id = ${vehicles[0]}`;
+      inactivationLocked();
+      await holdInactivation;
+    });
+    await inactivationReady;
+    const blockedApprovalName = `approval_wait_${crypto.randomUUID()}`;
+    const approvalAfterInactivation = concurrent.begin(async (tx) => {
+      await tx`select set_config('application_name', ${blockedApprovalName}, true)`;
+      await tx`set local statement_timeout = '4s'`;
+      await tx`update reservation_requests set status = 'approved', decided_by = ${actor} where id = ${rejectedId}`;
+    });
+    try {
+      await waitUntilBlocked(blockedApprovalName);
+    } finally {
+      releaseInactivation();
+    }
+    await inactivationFirst;
+    await expect(approvalAfterInactivation).rejects.toMatchObject({ code: "23514" });
+    expect(await sql`select status from reservation_requests where id = ${rejectedId}`).toEqual([{ status: "requested" }]);
+
+    await sql`update vehicles set operational_status = 'active' where id = ${vehicles[0]}`;
+    const approvedId = await request("2027-02-01", "2027-02-05");
+    let releaseApproval!: () => void;
+    const holdApproval = new Promise<void>((resolve) => { releaseApproval = resolve; });
+    let approvalLocked!: () => void;
+    const approvalReady = new Promise<void>((resolve) => { approvalLocked = resolve; });
+    const approvalFirst = sql.begin(async (tx) => {
+      await tx`update reservation_requests set status = 'approved', decided_by = ${actor} where id = ${approvedId}`;
+      approvalLocked();
+      await holdApproval;
+    });
+    await approvalReady;
+    const blockedInactivationName = `inactivation_wait_${crypto.randomUUID()}`;
+    const inactivationAfterApproval = concurrent.begin(async (tx) => {
+      await tx`select set_config('application_name', ${blockedInactivationName}, true)`;
+      await tx`set local statement_timeout = '4s'`;
+      await tx`update vehicles set operational_status = 'inactive' where id = ${vehicles[0]}`;
+    });
+    try {
+      await waitUntilBlocked(blockedInactivationName);
+    } finally {
+      releaseApproval();
+    }
+    await Promise.all([approvalFirst, inactivationAfterApproval]);
+    expect(await sql`select status from reservation_requests where id = ${approvedId}`).toEqual([{ status: "approved" }]);
+    expect(await sql`select operational_status from vehicles where id = ${vehicles[0]}`).toEqual([{ operational_status: "inactive" }]);
+    expect(await sql`select status from vehicle_schedule_blocks where reservation_request_id = ${approvedId}`).toEqual([{ status: "active" }]);
   }, 10000);
 
   it.each(["approved", "cancelled"])("duas tentativas concorrentes de %s sobre a mesma solicitação não duplicam efeitos", async (status) => {

@@ -20,7 +20,7 @@ export const drizzleLeadRepository: LeadRepository = {
     }).from(vehiclesTable).innerJoin(organizations, eq(organizations.id, vehiclesTable.organizationId)).where(and(
       eq(vehiclesTable.id, vehicleId),
       eq(vehiclesTable.organizationId, demoOrganizationId),
-      eq(vehiclesTable.status, "available"),
+      eq(vehiclesTable.operationalStatus, "active"),
       eq(vehiclesTable.isDemo, true),
     )).limit(1));
     if (!vehicle) return null;

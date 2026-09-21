@@ -24,7 +24,7 @@ export async function loadVehicleCatalog(): Promise<Vehicle[]> {
     const available = await database.select({ id: vehiclesTable.id }).from(vehiclesTable).where(and(
       inArray(vehiclesTable.id, vehicles.map(({ id }) => id)),
       eq(vehiclesTable.organizationId, demoOrganizationId),
-      eq(vehiclesTable.status, "available"),
+      eq(vehiclesTable.operationalStatus, "active"),
       eq(vehiclesTable.isDemo, true),
     ));
     return applyAvailability(new Set(available.map(({ id }) => id)));

@@ -8,13 +8,14 @@ const runId = crypto.randomUUID();
 const otherOrganizationId = crypto.randomUUID();
 const availableVehicleId = crypto.randomUUID();
 const unavailableVehicleId = crypto.randomUUID();
+const legacyUnavailableVehicleId = crypto.randomUUID();
 const nonDemoVehicleId = crypto.randomUUID();
 const otherOrganizationVehicleId = crypto.randomUUID();
 const acceptedLeadId = crypto.randomUUID();
 const returningLeadId = crypto.randomUUID();
 const idempotentLeadIds = [crypto.randomUUID(), crypto.randomUUID()];
 const idempotentOperationId = crypto.randomUUID();
-const attemptedLeadIds = Array.from({ length: 6 }, () => crypto.randomUUID());
+const attemptedLeadIds = Array.from({ length: 7 }, () => crypto.randomUUID());
 const broadAttemptIds = Array.from({ length: 4 }, () => crypto.randomUUID());
 const roleSuffix = runId.replaceAll("-", "").slice(0, 12);
 const auxiliaryRoles = [`rt_parent_${roleSuffix}`, `rt_grand_${roleSuffix}`, `rt_child_${roleSuffix}`];
@@ -60,11 +61,12 @@ describe("contrato de acesso do runtime", () => {
       demoOrganizationCreated = true;
     }
     await sql`insert into organizations (id, name, slug) values (${otherOrganizationId}, 'Organização isolada de teste', ${`runtime_other_${runId}`})`;
-    await sql`insert into vehicles (id, organization_id, brand, model, year, color, weekly_price_cents, status, is_demo) values
-      (${availableVehicleId}, ${demoOrganizationId}, 'Marca', 'Disponível', 2024, 'Prata', 70000, 'available', true),
-      (${unavailableVehicleId}, ${demoOrganizationId}, 'Marca', 'Indisponível', 2024, 'Prata', 70000, 'rented', true),
-      (${nonDemoVehicleId}, ${demoOrganizationId}, 'Marca', 'Não demonstrativo', 2024, 'Prata', 70000, 'available', false),
-      (${otherOrganizationVehicleId}, ${otherOrganizationId}, 'Marca', 'Outra organização', 2024, 'Prata', 70000, 'available', true)`;
+    await sql`insert into vehicles (id, organization_id, brand, model, year, color, weekly_price_cents, status, operational_status, is_demo) values
+      (${availableVehicleId}, ${demoOrganizationId}, 'Marca', 'Disponível', 2024, 'Prata', 70000, 'available', 'active', true),
+      (${unavailableVehicleId}, ${demoOrganizationId}, 'Marca', 'Indisponível', 2024, 'Prata', 70000, 'available', 'inactive', true),
+      (${legacyUnavailableVehicleId}, ${demoOrganizationId}, 'Marca', 'Guarda legada', 2024, 'Prata', 70000, 'inactive', 'active', true),
+      (${nonDemoVehicleId}, ${demoOrganizationId}, 'Marca', 'Não demonstrativo', 2024, 'Prata', 70000, 'available', 'active', false),
+      (${otherOrganizationVehicleId}, ${otherOrganizationId}, 'Marca', 'Outra organização', 2024, 'Prata', 70000, 'available', 'active', true)`;
   });
 
   afterAll(async () => {
@@ -77,7 +79,7 @@ describe("contrato de acesso do runtime", () => {
     await attempt(dropTemporaryPolicies);
     await attempt(cleanupAuxiliaryRoles);
     await attempt(() => sql`delete from rental_leads where id = any(${[acceptedLeadId, returningLeadId, ...idempotentLeadIds, ...attemptedLeadIds, ...broadAttemptIds]}::uuid[])`);
-    await attempt(() => sql`delete from vehicles where id in (${availableVehicleId}, ${unavailableVehicleId}, ${nonDemoVehicleId}, ${otherOrganizationVehicleId})`);
+    await attempt(() => sql`delete from vehicles where id in (${availableVehicleId}, ${unavailableVehicleId}, ${legacyUnavailableVehicleId}, ${nonDemoVehicleId}, ${otherOrganizationVehicleId})`);
     await attempt(() => sql`delete from organizations where id = ${otherOrganizationId}`);
     if (demoOrganizationCreated) await attempt(() => sql`delete from organizations where id = ${demoOrganizationId}`);
     for (const role of rolesCreatedByTest.reverse()) await attempt(() => sql.unsafe(`drop role ${role}`));
@@ -139,7 +141,7 @@ describe("contrato de acesso do runtime", () => {
 
     const allowed = [
       ["organizations", "id", "SELECT"],
-      ...["id", "organization_id", "status", "is_demo"].map((column) => ["vehicles", column, "SELECT"]),
+      ...["id", "organization_id", "status", "operational_status", "is_demo"].map((column) => ["vehicles", column, "SELECT"]),
       ...["id", "operation_id", "organization_id", "vehicle_id", "full_name", "phone", "email", "city", "has_definitive_license", "usage_purpose", "has_ear", "driver_platform", "preferred_contact_time", "status"].map((column) => ["rental_leads", column, "INSERT"]),
     ];
     for (const [table, column, privilege] of allowed) {
@@ -171,7 +173,7 @@ describe("contrato de acesso do runtime", () => {
   });
 
   it("consulta somente a organização e o veículo demonstrativo disponível", async () => {
-    const result = await asRuntime(() => sql`select v.id, v.organization_id from vehicles v inner join organizations o on o.id = v.organization_id where v.id in (${availableVehicleId}, ${unavailableVehicleId}, ${nonDemoVehicleId}, ${otherOrganizationVehicleId}) order by v.id`);
+    const result = await asRuntime(() => sql`select v.id, v.organization_id from vehicles v inner join organizations o on o.id = v.organization_id where v.id in (${availableVehicleId}, ${unavailableVehicleId}, ${legacyUnavailableVehicleId}, ${nonDemoVehicleId}, ${otherOrganizationVehicleId}) order by v.id`);
     expect(result).toEqual([{ id: availableVehicleId, organization_id: demoOrganizationId }]);
   });
 
@@ -216,6 +218,7 @@ describe("contrato de acesso do runtime", () => {
       [attemptedLeadIds[3], demoOrganizationId, nonDemoVehicleId, "new"],
       [attemptedLeadIds[4], demoOrganizationId, null, "new"],
       [attemptedLeadIds[5], demoOrganizationId, crypto.randomUUID(), "new"],
+      [attemptedLeadIds[6], demoOrganizationId, legacyUnavailableVehicleId, "new"],
     ] as const;
     await asRuntime(async () => {
       for (const [id, organizationId, vehicleId, status] of cases) {
@@ -231,7 +234,7 @@ describe("contrato de acesso do runtime", () => {
       await sql.unsafe(`create policy ${temporaryPolicyName} on rental_leads as permissive for insert to public with check (true)`);
       await asRuntime(async () => {
         expect(await sql`select id from organizations where id = ${otherOrganizationId}`).toHaveLength(0);
-        expect(await sql`select id from vehicles where id in (${unavailableVehicleId}, ${nonDemoVehicleId}, ${otherOrganizationVehicleId})`).toHaveLength(0);
+        expect(await sql`select id from vehicles where id in (${unavailableVehicleId}, ${legacyUnavailableVehicleId}, ${nonDemoVehicleId}, ${otherOrganizationVehicleId})`).toHaveLength(0);
         await expect(sql`insert into rental_leads (id, operation_id, organization_id, vehicle_id, full_name, phone, city, has_definitive_license, status) values (${broadAttemptIds[0]}, ${crypto.randomUUID()}, ${demoOrganizationId}, ${unavailableVehicleId}, 'Pessoa', '(12) 99999-9999', 'Cidade', true, 'new')`).rejects.toThrow();
         await expect(sql`insert into rental_leads (id, operation_id, organization_id, vehicle_id, full_name, phone, city, has_definitive_license, status) values (${broadAttemptIds[1]}, ${crypto.randomUUID()}, ${demoOrganizationId}, ${nonDemoVehicleId}, 'Pessoa', '(12) 99999-9999', 'Cidade', true, 'new')`).rejects.toThrow();
         await expect(sql`insert into rental_leads (id, operation_id, organization_id, vehicle_id, full_name, phone, city, has_definitive_license, status) values (${broadAttemptIds[2]}, ${crypto.randomUUID()}, ${otherOrganizationId}, ${otherOrganizationVehicleId}, 'Pessoa', '(12) 99999-9999', 'Cidade', true, 'new')`).rejects.toThrow();
@@ -253,7 +256,10 @@ describe("contrato de acesso do runtime", () => {
       try {
         await expect(sql`select id from organizations`).rejects.toThrow();
         if (role === "anon") await expect(sql`select id from vehicles`).rejects.toThrow();
-        else expect(await sql`select id from vehicles`).toHaveLength(0);
+        else {
+          expect(await sql`select id from vehicles`).toHaveLength(0);
+          await expect(sql`select operational_status from vehicles`).rejects.toThrow();
+        }
         await expect(sql`insert into rental_leads (id, operation_id, organization_id, full_name, phone, city, has_definitive_license, status) values (${crypto.randomUUID()}, ${crypto.randomUUID()}, ${demoOrganizationId}, 'Pessoa', '(12) 99999-9999', 'Cidade', true, 'new')`).rejects.toThrow();
       } finally { await sql`reset role`; }
     }

@@ -14,6 +14,7 @@ export const authorizedLeadFlowFixture = Object.freeze({
     color: "Prata",
     weeklyPriceCents: 70_000,
     status: "available",
+    operationalStatus: "active",
     isDemo: true,
   }),
 });

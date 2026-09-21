@@ -32,9 +32,9 @@ describe("disponibilidade persistida do catálogo", () => {
     const [query, params] = unsafe.mock.calls[0];
     expect(query).toContain('select "id" from "vehicles"');
     expect(query).toContain('"organization_id" =');
-    expect(query).toContain('"status" =');
+    expect(query).toContain('"operational_status" =');
     expect(query).toContain('"is_demo" =');
-    expect(params).toEqual([...vehicles.map(({ id }) => id), "10000000-0000-4000-8000-000000000001", "available", true]);
+    expect(params).toEqual([...vehicles.map(({ id }) => id), "10000000-0000-4000-8000-000000000001", "active", true]);
   });
 
   it("falha fechado e registra somente estágio e código seguro", async () => {

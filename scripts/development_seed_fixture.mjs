@@ -1,8 +1,8 @@
 export const developmentSeedFixture = Object.freeze({
   organization: Object.freeze({ id: "10000000-0000-4000-8000-000000000001", name: "Locadora demonstrativa", slug: "locadora_demonstrativa" }),
   vehicles: Object.freeze([
-    Object.freeze({ id: "20000000-0000-4000-8000-000000000003", organizationId: "10000000-0000-4000-8000-000000000001", brand: "Ford", model: "Fiesta", version: null, year: 2019, color: "Prata", weeklyPriceCents: 70_000, status: "available", isDemo: true }),
-    Object.freeze({ id: "20000000-0000-4000-8000-000000000004", organizationId: "10000000-0000-4000-8000-000000000001", brand: "Chevrolet", model: "Onix", version: null, year: 2022, color: "Prata", weeklyPriceCents: 70_000, status: "available", isDemo: true }),
+    Object.freeze({ id: "20000000-0000-4000-8000-000000000003", organizationId: "10000000-0000-4000-8000-000000000001", brand: "Ford", model: "Fiesta", version: null, year: 2019, color: "Prata", weeklyPriceCents: 70_000, status: "available", operationalStatus: "active", isDemo: true }),
+    Object.freeze({ id: "20000000-0000-4000-8000-000000000004", organizationId: "10000000-0000-4000-8000-000000000001", brand: "Chevrolet", model: "Onix", version: null, year: 2022, color: "Prata", weeklyPriceCents: 70_000, status: "available", operationalStatus: "active", isDemo: true }),
   ]),
 });
 

@@ -34,8 +34,8 @@ function adapterFor(initial: DevelopmentSeedObservation) {
 describe("seed de desenvolvimento", () => {
   it("define exatamente os dois veículos autorizados pelo contrato", () => {
     expect(developmentSeedFixture.vehicles).toEqual([
-      expect.objectContaining({ id: "20000000-0000-4000-8000-000000000003", model: "Fiesta", year: 2019, status: "available" }),
-      expect.objectContaining({ id: "20000000-0000-4000-8000-000000000004", model: "Onix", year: 2022, status: "available" }),
+      expect.objectContaining({ id: "20000000-0000-4000-8000-000000000003", model: "Fiesta", year: 2019, status: "available", operationalStatus: "active" }),
+      expect.objectContaining({ id: "20000000-0000-4000-8000-000000000004", model: "Onix", year: 2022, status: "available", operationalStatus: "active" }),
     ]);
     expect(developmentSeedFixture.vehicles.every((vehicle) => vehicle.organizationId === developmentSeedFixture.organization.id && vehicle.weeklyPriceCents === 70_000 && vehicle.isDemo)).toBe(true);
   });

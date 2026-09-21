@@ -20,7 +20,7 @@ try {
           "organizations.id", "organizations.name", "organizations.slug",
           "vehicles.id", "vehicles.organization_id", "vehicles.brand", "vehicles.model",
           "vehicles.version", "vehicles.year", "vehicles.color", "vehicles.weekly_price_cents",
-          "vehicles.status", "vehicles.is_demo",
+          "vehicles.status", "vehicles.operational_status", "vehicles.is_demo",
         ];
         if (required.some((column) => !columns.has(column))) throw new DevelopmentSeedError("SCHEMA_MISSING");
       },
@@ -32,7 +32,8 @@ try {
         `;
         const vehicles = await transaction`
           SELECT id::text, organization_id::text AS "organizationId", brand, model, version,
-                 year, color, weekly_price_cents AS "weeklyPriceCents", status, is_demo AS "isDemo"
+                 year, color, weekly_price_cents AS "weeklyPriceCents", status,
+                 operational_status AS "operationalStatus", is_demo AS "isDemo"
           FROM vehicles
           WHERE id IN ${transaction(fixtureVehicles.map(({ id }) => id))}
         `;
@@ -45,8 +46,8 @@ try {
         }
         for (const vehicle of plan.vehiclesToInsert) {
           await transaction`
-            INSERT INTO vehicles (id, organization_id, brand, model, version, year, color, weekly_price_cents, status, is_demo)
-            VALUES (${vehicle.id}, ${vehicle.organizationId}, ${vehicle.brand}, ${vehicle.model}, ${vehicle.version}, ${vehicle.year}, ${vehicle.color}, ${vehicle.weeklyPriceCents}, ${vehicle.status}, ${vehicle.isDemo})
+            INSERT INTO vehicles (id, organization_id, brand, model, version, year, color, weekly_price_cents, status, operational_status, is_demo)
+            VALUES (${vehicle.id}, ${vehicle.organizationId}, ${vehicle.brand}, ${vehicle.model}, ${vehicle.version}, ${vehicle.year}, ${vehicle.color}, ${vehicle.weeklyPriceCents}, ${vehicle.status}, ${vehicle.operationalStatus}, ${vehicle.isDemo})
           `;
         }
       },
