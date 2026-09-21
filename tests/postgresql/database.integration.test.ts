@@ -13,8 +13,8 @@ describe("estrutura PostgreSQL", () => {
   it("possui as tabelas e enums esperados", async () => {
     const tables = await sql`select table_name from information_schema.tables where table_schema = 'public' and table_name in ('organizations','vehicles','rental_leads','lead_status_history') order by table_name`;
     expect(tables.map(({ table_name }) => table_name)).toEqual(["lead_status_history", "organizations", "rental_leads", "vehicles"]);
-    const enums = await sql`select typname from pg_type where typname in ('vehicle_status','lead_status') order by typname`;
-    expect(enums.map(({ typname }) => typname)).toEqual(["lead_status", "vehicle_status"]);
+    const enums = await sql`select typname from pg_type where typname in ('vehicle_status','vehicle_operational_status','lead_status') order by typname`;
+    expect(enums.map(({ typname }) => typname)).toEqual(["lead_status", "vehicle_operational_status", "vehicle_status"]);
   });
 
   it("mantém RLS habilitado nas quatro tabelas", async () => {
@@ -26,16 +26,16 @@ describe("estrutura PostgreSQL", () => {
   it("possui chaves estrangeiras, índices e constraints essenciais", async () => {
     const constraints = await sql`select conname from pg_constraint where conname in ('vehicles_organization_id_fk','vehicles_weekly_price_cents_non_negative_check','vehicles_year_reasonable_check','rental_leads_organization_id_fk','rental_leads_vehicle_id_fk','rental_leads_usage_purpose_check','lead_status_history_organization_id_fk','lead_status_history_rental_lead_id_fk')`;
     expect(constraints).toHaveLength(8);
-    const indexes = await sql`select indexname from pg_indexes where schemaname = 'public' and indexname in ('vehicles_organization_status_idx','rental_leads_organization_status_idx','rental_leads_organization_created_at_idx','rental_leads_operation_id_unique','lead_status_history_rental_lead_created_at_idx')`;
-    expect(indexes).toHaveLength(5);
+    const indexes = await sql`select indexname from pg_indexes where schemaname = 'public' and indexname in ('vehicles_organization_status_idx','vehicles_organization_operational_status_idx','rental_leads_organization_status_idx','rental_leads_organization_created_at_idx','rental_leads_operation_id_unique','lead_status_history_rental_lead_created_at_idx')`;
+    expect(indexes).toHaveLength(6);
     const [operation] = await sql`select is_nullable, column_default from information_schema.columns where table_schema = 'public' and table_name = 'rental_leads' and column_name = 'operation_id'`;
     expect(operation).toEqual({ is_nullable: "NO", column_default: null });
   });
 
   it("rejeita estado inválido e preço negativo", async () => {
     const [organization] = await sql`insert into organizations (name, slug) values ('Teste local', ${`test_${crypto.randomUUID()}`}) returning id`;
-    await expect(sql`insert into vehicles (organization_id, brand, model, year, color, weekly_price_cents, status) values (${organization.id}, 'Marca', 'Modelo', 2020, 'Cor', -1, 'available')`).rejects.toThrow();
-    await expect(sql`insert into vehicles (organization_id, brand, model, year, color, weekly_price_cents, status) values (${organization.id}, 'Marca', 'Modelo', 2020, 'Cor', 1, 'invalid')`).rejects.toThrow();
+    await expect(sql`insert into vehicles (organization_id, brand, model, year, color, weekly_price_cents, status, operational_status) values (${organization.id}, 'Marca', 'Modelo', 2020, 'Cor', -1, 'available', 'active')`).rejects.toThrow();
+    await expect(sql`insert into vehicles (organization_id, brand, model, year, color, weekly_price_cents, status, operational_status) values (${organization.id}, 'Marca', 'Modelo', 2020, 'Cor', 1, 'invalid', 'active')`).rejects.toThrow();
     await sql`delete from organizations where id = ${organization.id}`;
   });
 

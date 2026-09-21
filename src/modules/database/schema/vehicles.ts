@@ -1,7 +1,7 @@
 import { check, foreignKey, index, integer, pgTable, text, timestamp, uuid, boolean, unique } from "drizzle-orm/pg-core";
 import { sql } from "drizzle-orm";
 import { organizations } from "./organizations";
-import { vehicleStatusEnum } from "./enums";
+import { vehicleOperationalStatusEnum, vehicleStatusEnum } from "./enums";
 
 export const vehiclesTable = pgTable("vehicles", {
   id: uuid("id").defaultRandom().primaryKey(),
@@ -12,7 +12,9 @@ export const vehiclesTable = pgTable("vehicles", {
   year: integer("year").notNull(),
   color: text("color").notNull(),
   weeklyPriceCents: integer("weekly_price_cents").notNull(),
+  // Legacy compatibility column kept during expand/contract. Do not use it for temporal availability.
   status: vehicleStatusEnum("status").notNull(),
+  operationalStatus: vehicleOperationalStatusEnum("operational_status").notNull(),
   isDemo: boolean("is_demo").default(false).notNull(),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
@@ -23,4 +25,5 @@ export const vehiclesTable = pgTable("vehicles", {
   check("vehicles_year_reasonable_check", sql`${table.year} between 1900 and 2200`),
   index("vehicles_organization_id_idx").on(table.organizationId),
   index("vehicles_organization_status_idx").on(table.organizationId, table.status),
+  index("vehicles_organization_operational_status_idx").on(table.organizationId, table.operationalStatus),
 ]);

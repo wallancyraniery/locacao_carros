@@ -26,7 +26,7 @@ describe("fixture local em PostgreSQL", () => {
     await sql`delete from vehicles where id = ${externalVehicleId}`;
     await sql`delete from organizations where id = ${externalOrganization.id}`;
     await sql`insert into organizations (id, name, slug) values (${externalOrganization.id}, ${externalOrganization.name}, ${externalOrganization.slug})`;
-    await sql`insert into vehicles (id, organization_id, brand, model, version, year, color, weekly_price_cents, status, is_demo) values (${externalVehicleId}, ${externalOrganization.id}, 'Marca externa', 'Modelo externo', null, 2020, 'Azul', 50000, 'maintenance', false)`;
+    await sql`insert into vehicles (id, organization_id, brand, model, version, year, color, weekly_price_cents, status, operational_status, is_demo) values (${externalVehicleId}, ${externalOrganization.id}, 'Marca externa', 'Modelo externo', null, 2020, 'Azul', 50000, 'maintenance', 'inactive', false)`;
   });
 
   afterAll(async () => {
@@ -50,15 +50,16 @@ describe("fixture local em PostgreSQL", () => {
     const organizations = await sql`select id::text, name, slug from organizations where id = ${developmentSeedFixture.organization.id}`;
     const vehicles = await sql`
       select id::text, organization_id::text as "organizationId", brand, model, version, year,
-             color, weekly_price_cents as "weeklyPriceCents", status, is_demo as "isDemo"
+             color, weekly_price_cents as "weeklyPriceCents", status,
+             operational_status as "operationalStatus", is_demo as "isDemo"
       from vehicles where organization_id = ${developmentSeedFixture.organization.id} order by id
     `;
     expect(organizations).toEqual([{ ...developmentSeedFixture.organization }]);
     expect(vehicles).toEqual(developmentSeedFixture.vehicles.map((vehicle) => ({ ...vehicle })));
 
     const [externalOrganizationAfter] = await sql`select id::text, name, slug from organizations where id = ${externalOrganization.id}`;
-    const [externalVehicleAfter] = await sql`select id::text, status, is_demo as "isDemo" from vehicles where id = ${externalVehicleId}`;
+    const [externalVehicleAfter] = await sql`select id::text, status, operational_status as "operationalStatus", is_demo as "isDemo" from vehicles where id = ${externalVehicleId}`;
     expect(externalOrganizationAfter).toEqual(externalOrganization);
-    expect(externalVehicleAfter).toEqual({ id: externalVehicleId, status: "maintenance", isDemo: false });
+    expect(externalVehicleAfter).toEqual({ id: externalVehicleId, status: "maintenance", operationalStatus: "inactive", isDemo: false });
   });
 });

@@ -1,5 +1,7 @@
 export const vehicleStatuses = ["available", "reserved", "rented", "maintenance", "inactive"] as const;
 export type VehicleStatus = (typeof vehicleStatuses)[number];
+export const vehicleOperationalStatuses = ["active", "inactive"] as const;
+export type VehicleOperationalStatus = (typeof vehicleOperationalStatuses)[number];
 export type Vehicle = {
   id: string;
   model: string;

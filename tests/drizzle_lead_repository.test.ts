@@ -64,9 +64,9 @@ describe("repository Drizzle real com transporte local simulado", () => {
     const [query, params] = unsafe.mock.calls[0];
     expect(query).toContain('select "vehicles"."id", "vehicles"."organization_id"');
     expect(query).toContain('inner join "organizations"');
-    expect(query).toContain('"vehicles"."status" = $3');
+    expect(query).toContain('"vehicles"."operational_status" = $3');
     expect(query).toContain('"vehicles"."is_demo" = $4');
-    expect(params).toEqual([lead.vehicleId, lead.organizationId, "available", true, 1]);
+    expect(params).toEqual([lead.vehicleId, lead.organizationId, "active", true, 1]);
   });
 
   it("retorna null quando nenhum veículo autorizado é visível", async () => {

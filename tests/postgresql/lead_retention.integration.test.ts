@@ -146,8 +146,8 @@ describe("retenção preserva vínculos operacionais", () => {
     org = crypto.randomUUID(); vehicle = crypto.randomUUID();
     ids = [crypto.randomUUID(), crypto.randomUUID(), crypto.randomUUID()];
     await sql`insert into organizations (id, name, slug) values (${org}, 'Retenção sintética operacional', ${`retention_links_${org}`})`;
-    await sql`insert into vehicles (id, organization_id, brand, model, year, color, weekly_price_cents, status)
-      values (${vehicle}, ${org}, 'Marca', 'Modelo', 2024, 'Prata', 70000, 'available')`;
+    await sql`insert into vehicles (id, organization_id, brand, model, year, color, weekly_price_cents, status, operational_status)
+      values (${vehicle}, ${org}, 'Marca', 'Modelo', 2024, 'Prata', 70000, 'available', 'active')`;
     for (const id of ids) {
       await sql`insert into rental_leads (id, operation_id, organization_id, full_name, phone, city, has_definitive_license, created_at)
         values (${id}, ${crypto.randomUUID()}, ${org}, 'Pessoa sintética', '000000000', 'Cidade', true, now() - interval '120 days')`;

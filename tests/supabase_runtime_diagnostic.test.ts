@@ -27,8 +27,9 @@ describe("diagnóstico Supabase do runtime", () => {
     ])).toBe(false);
   });
 
-  it("mantém exatamente os 19 grants por coluna", () => {
-    expect(expectedRuntimeColumnPrivileges.size).toBe(19);
+  it("mantém exatamente os 20 grants por coluna", () => {
+    expect(expectedRuntimeColumnPrivileges.size).toBe(20);
+    expect(expectedRuntimeColumnPrivileges.has("vehicles:operational_status:SELECT")).toBe(true);
     expect(expectedRuntimeColumnPrivileges.has("rental_leads:id:SELECT")).toBe(false);
   });
 

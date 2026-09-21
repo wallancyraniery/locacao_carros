@@ -59,9 +59,9 @@ async function localMigrationHistory() {
   } catch {
     refuse("LOCAL_MIGRATION_HISTORY");
   }
-  if (!Array.isArray(journal.entries) || journal.entries.length !== 5
-    || journal.entries[3]?.tag !== "0003_runtime_lead_intake_access"
-    || journal.entries[4]?.tag !== "0004_useful_human_torch") {
+    if (!Array.isArray(journal.entries) || journal.entries.length !== 9
+      || journal.entries[3]?.tag !== "0003_runtime_lead_intake_access"
+      || journal.entries[8]?.tag !== "0008_vehicle_operational_status") {
     refuse("LOCAL_MIGRATION_HISTORY");
   }
   return Promise.all(journal.entries.map(async (entry, index) => {
@@ -109,7 +109,7 @@ function createAdapter(transaction, expectedMigrations) {
             ))
             OR (table_name = 'vehicles' AND column_name IN (
               'id', 'organization_id', 'brand', 'model', 'version', 'year', 'color',
-              'weekly_price_cents', 'status', 'is_demo', 'created_at', 'updated_at'
+              'weekly_price_cents', 'status', 'operational_status', 'is_demo', 'created_at', 'updated_at'
             ))
           )`;
       const expectedColumns = [
@@ -127,6 +127,7 @@ function createAdapter(transaction, expectedMigrations) {
         { table_name: "vehicles", column_name: "color", data_type: "text", udt_name: "text", is_nullable: "NO", column_default: null },
         { table_name: "vehicles", column_name: "weekly_price_cents", data_type: "integer", udt_name: "int4", is_nullable: "NO", column_default: null },
         { table_name: "vehicles", column_name: "status", data_type: "USER-DEFINED", udt_name: "vehicle_status", is_nullable: "NO", column_default: null },
+        { table_name: "vehicles", column_name: "operational_status", data_type: "USER-DEFINED", udt_name: "vehicle_operational_status", is_nullable: "NO", column_default: null },
         { table_name: "vehicles", column_name: "is_demo", data_type: "boolean", udt_name: "bool", is_nullable: "NO", column_default: "false" },
         { table_name: "vehicles", column_name: "created_at", data_type: "timestamp with time zone", udt_name: "timestamptz", is_nullable: "NO", column_default: "now()" },
         { table_name: "vehicles", column_name: "updated_at", data_type: "timestamp with time zone", udt_name: "timestamptz", is_nullable: "NO", column_default: "now()" },
@@ -167,6 +168,11 @@ function createAdapter(transaction, expectedMigrations) {
         { enumlabel: "available" }, { enumlabel: "reserved" }, { enumlabel: "rented" },
         { enumlabel: "maintenance" }, { enumlabel: "inactive" },
       ])) refuse("VEHICLE_STATUS_ENUM");
+      const operationalStatusLabels = await transaction`SELECT enumlabel
+        FROM pg_enum WHERE enumtypid = 'public.vehicle_operational_status'::regtype ORDER BY enumsortorder`;
+      if (!recordsEqual(operationalStatusLabels, [
+        { enumlabel: "active" }, { enumlabel: "inactive" },
+      ])) refuse("VEHICLE_OPERATIONAL_STATUS_ENUM");
     },
     async readFixtureState() {
       const organization = authorizedLeadFlowFixture.organization;
@@ -175,7 +181,7 @@ function createAdapter(transaction, expectedMigrations) {
         WHERE id = ${organization.id} OR slug = ${organization.slug}`;
       const vehicles = await transaction`SELECT id::text, organization_id::text AS "organizationId",
           brand, model, version, year, color, weekly_price_cents AS "weeklyPriceCents",
-          status::text, is_demo AS "isDemo"
+          status::text, operational_status::text AS "operationalStatus", is_demo AS "isDemo"
         FROM public.vehicles WHERE id = ${vehicle.id}`;
       return { organizations, vehicles };
     },
@@ -186,10 +192,10 @@ function createAdapter(transaction, expectedMigrations) {
         VALUES (${organization.id}, ${organization.name}, ${organization.slug})`;
       await transaction`INSERT INTO public.vehicles (
           id, organization_id, brand, model, version, year, color,
-          weekly_price_cents, status, is_demo
+          weekly_price_cents, status, operational_status, is_demo
         ) VALUES (
           ${vehicle.id}, ${vehicle.organizationId}, ${vehicle.brand}, ${vehicle.model}, ${vehicle.version},
-          ${vehicle.year}, ${vehicle.color}, ${vehicle.weeklyPriceCents}, ${vehicle.status}, ${vehicle.isDemo}
+          ${vehicle.year}, ${vehicle.color}, ${vehicle.weeklyPriceCents}, ${vehicle.status}, ${vehicle.operationalStatus}, ${vehicle.isDemo}
         )`;
     },
   };

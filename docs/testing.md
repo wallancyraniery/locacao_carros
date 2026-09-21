@@ -13,6 +13,8 @@ A integração contínua executa typecheck, lint, testes unitários, migrations 
 
 O checkpoint de Reservas e Disponibilidade é comprovado em `tests/postgresql/reservations.integration.test.ts`: intervalos finitos e semiabertos, pendências sobrepostas, conflitos/adjacência, aprovação atômica, duas transações concorrentes, FKs multilocadora, RLS e grants, cancelamento/liberação, integridade da agenda e retry da outbox, evento requested atômico, cancelamento idempotente e concorrência sobre o mesmo ID. A suíte de retenção verifica preservação por vínculos existentes, posteriores ao preview e confirmados durante a espera por lock. Aplique a migration 0007 somente no banco local de testes com `npm run db:migrate:test` para essa validação. A suíte não envia notificações nem acessa Supabase.
 
+O checkpoint de estado operacional acrescenta testes da migration 0008 em banco local isolado, incluindo backfill permitido e recusa dos estados legados ambíguos. A suíte de reservas cobre veículo inativo, preservação do estado estrutural e as duas ordens da concorrência aprovação × inativação.
+
 ## Supabase e fluxo real
 
 `npm run db:check:supabase:runtime` é um diagnóstico remoto somente leitura. Ele verifica a credencial runtime exclusiva, Transaction Pooler 6543, TLS, identidade, ausência de privilégios e ownership, membership esperado, grants, policies, consulta de veículo, recusa de leitura de leads e fechamento da conexão.

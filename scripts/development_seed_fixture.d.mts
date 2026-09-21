@@ -1,7 +1,7 @@
 export type DevelopmentSeedOrganization = { id: string; name: string; slug: string };
 export type DevelopmentSeedVehicle = {
   id: string; organizationId: string; brand: string; model: string; version: string | null;
-  year: number; color: string; weeklyPriceCents: number; status: "available"; isDemo: true;
+  year: number; color: string; weeklyPriceCents: number; status: "available"; operationalStatus: "active"; isDemo: true;
 };
 export type DevelopmentSeedFixture = { organization: DevelopmentSeedOrganization; vehicles: readonly DevelopmentSeedVehicle[] };
 export type DevelopmentSeedObservation = { organizations: DevelopmentSeedOrganization[]; vehicles: DevelopmentSeedVehicle[] };

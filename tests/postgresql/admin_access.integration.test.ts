@@ -22,7 +22,7 @@ describe("Central: autorização real em PostgreSQL local", () => {
     for (let i = 0; i < 2; i++) {
       await sql`insert into organizations (id, name, slug) values (${orgs[i]}, 'Organização sintética', ${`central_${orgs[i]}`})`;
       await sql`insert into organization_memberships (user_id, organization_id) values (${users[i]}, ${orgs[i]})`;
-      await sql`insert into vehicles (id, organization_id, brand, model, year, color, weekly_price_cents, status) values (${vehicles[i]}, ${orgs[i]}, 'Marca sintética', 'Modelo', 2024, 'Prata', 70000, 'available')`;
+      await sql`insert into vehicles (id, organization_id, brand, model, year, color, weekly_price_cents, status, operational_status) values (${vehicles[i]}, ${orgs[i]}, 'Marca sintética', 'Modelo', 2024, 'Prata', 70000, 'available', 'active')`;
       await sql`insert into rental_leads (id, operation_id, organization_id, vehicle_id, full_name, phone, city, has_definitive_license) values (${leads[i]}, ${crypto.randomUUID()}, ${orgs[i]}, ${vehicles[i]}, 'Pessoa sintética', '11999990000', 'Cidade sintética', true)`;
     }
   });

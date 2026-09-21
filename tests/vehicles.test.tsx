@@ -9,7 +9,7 @@ vi.mock("@/modules/vehicles/infrastructure/catalog_availability.server", () => (
 import { vehicles } from "@/modules/vehicles/data/vehicles";
 import { VehicleList } from "@/modules/vehicles/components/vehicle_list";
 import { getVehicleStatusLabel } from "@/modules/vehicles/lib/status";
-import { vehicleStatuses } from "@/types/vehicle";
+import { vehicleOperationalStatuses, vehicleStatuses } from "@/types/vehicle";
 import { rentalTerms } from "@/modules/rentals/domain/rental_terms";
 import { HomePage } from "@/modules/marketing/components/home_page";
 import VehicleDetailPage from "@/app/veiculos/[id]/page";
@@ -36,6 +36,7 @@ describe("veículos demonstrativos", () => {
   });
   it("deriva o preço semanal da fonte única de condições comerciais", () => vehicles.forEach(({ weeklyPrice }) => expect(weeklyPrice * 100).toBe(rentalTerms.weeklyRentalCents)));
   it("preserva todos os estados aceitos", () => expect(vehicleStatuses).toEqual(["available", "reserved", "rented", "maintenance", "inactive"]));
+  it("separa os estados estruturais", () => expect(vehicleOperationalStatuses).toEqual(["active", "inactive"]));
   it("traduz os estados", () => { expect(getVehicleStatusLabel("available")).toBe("Disponível"); expect(getVehicleStatusLabel("maintenance")).toBe("Em manutenção"); });
   it("mantém somente as características informadas, sem inferir equipamentos", () => {
     vehicles.forEach((vehicle) => expect(vehicle).toMatchObject({ transmission: "Manual", feature: "Completo", availabilityLabel: "Interesse indisponível", acceptsInterest: false }));

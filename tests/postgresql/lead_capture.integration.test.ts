@@ -7,6 +7,7 @@ import { parseTestDatabaseEnvironment } from "@/config/test_database_environment
 
 const organizationId = "10000000-0000-4000-8000-000000000001";
 const availableVehicleId = "20000000-0000-4000-8000-000000000001";
+const inactiveVehicleId = "20000000-0000-4000-8000-000000000002";
 const rentedVehicleId = "20000000-0000-4000-8000-000000000003";
 const protection = { verify: async () => true };
 
@@ -39,18 +40,18 @@ describe("captura de interesse no PostgreSQL", () => {
     sql = postgres(testDatabaseUrl, { max: 2 });
     await sql`insert into organizations (id, name, slug) values (${organizationId}, 'Organização de teste', 'organizacao_de_teste') on conflict (id) do nothing`;
     const fixtures = [
-      [availableVehicleId, "available"],
-      ["20000000-0000-4000-8000-000000000002", "available"],
-      [rentedVehicleId, "rented"],
-      ["20000000-0000-4000-8000-000000000004", "inactive"],
+      [availableVehicleId, "available", "active"],
+      [inactiveVehicleId, "available", "inactive"],
+      [rentedVehicleId, "rented", "inactive"],
+      ["20000000-0000-4000-8000-000000000004", "inactive", "inactive"],
     ] as const;
-    for (const [id, status] of fixtures) {
-      await sql`insert into vehicles (id, organization_id, brand, model, year, color, weekly_price_cents, status, is_demo) values (${id}, ${organizationId}, 'Marca de teste', 'Modelo de teste', 2020, 'Cor de teste', 70000, ${status}, true) on conflict (id) do nothing`;
+    for (const [id, status, operationalStatus] of fixtures) {
+      await sql`insert into vehicles (id, organization_id, brand, model, year, color, weekly_price_cents, status, operational_status, is_demo) values (${id}, ${organizationId}, 'Marca de teste', 'Modelo de teste', 2020, 'Cor de teste', 70000, ${status}, ${operationalStatus}, true) on conflict (id) do nothing`;
     }
     seedReady = true;
     repository = {
       async findAvailableDemoVehicle(vehicleId) {
-        const [vehicle] = await sql`select id, organization_id from vehicles where id = ${vehicleId} and organization_id = ${organizationId} and status = 'available' and is_demo = true`;
+        const [vehicle] = await sql`select id, organization_id from vehicles where id = ${vehicleId} and organization_id = ${organizationId} and operational_status = 'active' and is_demo = true`;
         return vehicle ? { id: vehicle.id, organizationId: vehicle.organization_id } : null;
       },
       async createLead(lead: NewLead) {
@@ -77,7 +78,7 @@ describe("captura de interesse no PostgreSQL", () => {
     expect(lead).toEqual({ organization_id: organizationId, vehicle_id: availableVehicleId, usage_purpose: "professional_app", has_ear: true, status: "new" });
   });
 
-  it.each(["30000000-0000-4000-8000-000000000099", rentedVehicleId])("rejeita veículo inexistente ou indisponível", async (vehicleId) => {
+  it.each(["30000000-0000-4000-8000-000000000099", inactiveVehicleId, rentedVehicleId])("rejeita veículo inexistente ou inativo", async (vehicleId) => {
     const result = await submitLead(repository, protection, { ...validInput(randomUUID()), vehicleId, usagePurpose: "other", hasEar: "not_applicable" });
     expect(result.status).toBe("unavailable");
   });

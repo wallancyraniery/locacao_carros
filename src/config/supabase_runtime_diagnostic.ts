@@ -9,7 +9,7 @@ export const expectedRuntimeMembership = {
 
 export const expectedRuntimeColumnPrivileges = new Set([
   "organizations:id:SELECT",
-  ...["id", "organization_id", "status", "is_demo"].map((column) => `vehicles:${column}:SELECT`),
+  ...["id", "organization_id", "status", "operational_status", "is_demo"].map((column) => `vehicles:${column}:SELECT`),
   ...[
     "id", "operation_id", "organization_id", "vehicle_id", "full_name", "phone", "email", "city",
     "has_definitive_license", "usage_purpose", "has_ear", "driver_platform",

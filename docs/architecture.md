@@ -46,3 +46,5 @@ O contrato detalhado de acesso remoto está em [runtime_database_access.md](runt
 ## Núcleo de Reservas e Disponibilidade
 
 O [checkpoint 1](reservations_availability.md) adiciona quatro tabelas sem expor rotas ou alterar o intake. O PostgreSQL coordena transição de decisão → bloco de agenda → outbox na mesma transação, com triggers `SECURITY INVOKER`. A agenda usa exclusion constraint GiST para impedir sobreposições ativas inclusive sob concorrência. A outbox separa persistência do evento e entrega futura; a lista de espera não aloca veículos. RLS permanece fechado até definição do acesso operacional. O schema tipado está em `src/modules/database/schema/reservations.ts`; constraints de exclusão e triggers estão no SQL manual da migration 0007.
+
+O estado estrutural do veículo é `operational_status = active | inactive`; indisponibilidade temporal pertence exclusivamente a `vehicle_schedule_blocks`. A coluna `vehicles.status` e seu enum permanecem temporariamente como compatibilidade de expand/contract. Aprovação bloqueia a linha do veículo e exige `active`; aprovação e cancelamento não alteram o estado estrutural.
