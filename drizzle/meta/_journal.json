@@ -64,6 +64,13 @@
       "when": 1789965578124,
       "tag": "0008_vehicle_operational_status",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1790000000000,
+      "tag": "0009_availability_query",
+      "breakpoints": true
     }
   ]
 }
