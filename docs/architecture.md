@@ -34,7 +34,7 @@ A [Central de Interessados](central_interessados.md) usa Supabase Auth SSR com c
 ## Decisões estáveis
 
 - Dados do formulário passam pelo servidor; a aplicação não usa credencial administrativa.
-- UUIDs do lead e da operação são gerados pelo servidor, dinheiro é armazenado em centavos e datas usam `timestamptz`.
+- UUIDs do lead e da operação são gerados pelo servidor, dinheiro é armazenado em centavos e instantes de auditoria usam `timestamptz`. Retirada/devolução do núcleo de reservas usam `date`, com intervalo `[pickup_date, return_date)`.
 - A identidade opaca da operação permanece estável em retry técnico e possui unicidade no PostgreSQL; uma nova visita recebe outra identidade, sem deduplicação por telefone ou e-mail.
 - O INSERT de leads enumera somente as colunas concedidas à runtime e não depende de `RETURNING`.
 - A análise após o interesse permanece humana; o sistema ainda não é uma plataforma completa de reservas.
@@ -42,3 +42,7 @@ A [Central de Interessados](central_interessados.md) usa Supabase Auth SSR com c
 - A separação por módulos, o repository e as fronteiras de ambiente só devem mudar diante de benefício técnico concreto e validado.
 
 O contrato detalhado de acesso remoto está em [runtime_database_access.md](runtime_database_access.md).
+
+## Núcleo de Reservas e Disponibilidade
+
+O [checkpoint 1](reservations_availability.md) adiciona quatro tabelas sem expor rotas ou alterar o intake. O PostgreSQL coordena transição de decisão → bloco de agenda → outbox na mesma transação, com triggers `SECURITY INVOKER`. A agenda usa exclusion constraint GiST para impedir sobreposições ativas inclusive sob concorrência. A outbox separa persistência do evento e entrega futura; a lista de espera não aloca veículos. RLS permanece fechado até definição do acesso operacional. O schema tipado está em `src/modules/database/schema/reservations.ts`; constraints de exclusão e triggers estão no SQL manual da migration 0007.

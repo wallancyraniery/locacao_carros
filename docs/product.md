@@ -28,6 +28,10 @@ O MVP inclui catálogo e detalhes demonstrativos, formulário de interesse, vali
 
 A primeira entrega da Central de Interessados acrescenta autenticação restrita e listagem somente leitura por organização. Provisionamento de usuários é administrativo; edição de leads, recuperação de acesso na aplicação e pagamentos permanecem fora do escopo. Veja [central_interessados.md](central_interessados.md).
 
+## Evolução: Reservas e Disponibilidade
+
+O primeiro checkpoint acrescenta o núcleo persistido para solicitações reais de reserva, agenda de indisponibilidade, lista de espera e outbox de notificações. Aprovação humana passa a poder criar um bloqueio atômico no banco; solicitações pendentes não bloqueiam. A entrega é local, sem UI, API operacional ou envio externo. O formulário existente continua sendo manifestação de interesse. Veja [reservations_availability.md](reservations_availability.md) para estados, datas, garantias e decisões pendentes.
+
 ## Prioridades conhecidas
 
 ### P0 — antes de demonstração reproduzível ou uso público seguro

@@ -1,5 +1,5 @@
 import { sql } from "drizzle-orm";
-import { boolean, check, foreignKey, index, pgTable, text, timestamp, uniqueIndex, uuid } from "drizzle-orm/pg-core";
+import { boolean, check, foreignKey, index, pgTable, text, timestamp, unique, uniqueIndex, uuid } from "drizzle-orm/pg-core";
 import { organizations } from "./organizations";
 import { vehiclesTable } from "./vehicles";
 import { leadStatusEnum } from "./enums";
@@ -22,6 +22,7 @@ export const rentalLeads = pgTable("rental_leads", {
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
 }, (table) => [
+  unique("rental_leads_organization_id_id_unique").on(table.organizationId, table.id),
   foreignKey({ name: "rental_leads_organization_id_fk", columns: [table.organizationId], foreignColumns: [organizations.id] }).onDelete("restrict"),
   foreignKey({ name: "rental_leads_vehicle_id_fk", columns: [table.vehicleId], foreignColumns: [vehiclesTable.id] }).onDelete("restrict"),
   check("rental_leads_usage_purpose_check", sql`${table.usagePurpose} is null or ${table.usagePurpose} in ('professional_app', 'other')`),
