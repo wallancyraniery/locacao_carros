@@ -17,6 +17,7 @@ As tabelas do [núcleo de reservas](reservations_availability.md) têm RLS habil
 - Nunca versione senha, URL real de conexão, conteúdo de `.env`, certificado ou outro secret.
 - Nunca registre FormData, nome, telefone, e-mail, cidade, query com valores, CA, URL, stack ou detalhes que possam conter dados do usuário.
 - Falhas inesperadas do fluxo de lead registram somente `{ stage, code }`, com código sanitizado e mensagem pública genérica.
+- A submissão de reserva segue o mesmo formato, com estágios `reservation_submission` e `reservation_turnstile`. Somente códigos permitidos por `safeDatabaseErrorCode` são registrados; códigos desconhecidos viram `null`. Resultados esperados de domínio não geram diagnóstico técnico.
 - A proteção Turnstile é validada no servidor antes do acesso ao banco. O modo sintético existe somente fora de produção; produção exige configuração Cloudflare completa e hostname esperado.
 - Use dados exclusivamente sintéticos em homologação e minimize os campos coletados no produto.
 
