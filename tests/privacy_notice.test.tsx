@@ -18,6 +18,7 @@ describe("aviso público de privacidade", () => {
   it("mantém exatamente os campos aprovados no formulário público", () => {
     const source = [
       readFileSync("src/modules/leads/components/lead_form.tsx", "utf8"),
+      readFileSync("src/modules/leads/components/lead_fields.tsx", "utf8"),
       readFileSync("src/modules/leads/components/turnstile_field.tsx", "utf8"),
     ].join("\n");
     const fields = [...new Set([...source.matchAll(/name="([^"]+)"/g)].map((match) => match[1]))].sort();

@@ -6,7 +6,10 @@ import { formatRentalMoney, rentalTerms } from "@/modules/rentals/domain/rental_
 import { vehicles } from "@/modules/vehicles/data/vehicles";
 import { loadCatalogVehicle } from "@/modules/vehicles/infrastructure/catalog_availability.server";
 
-type VehicleDetailPageProps = { params: Promise<{ id: string }> };
+import { AvailabilitySection } from "@/modules/vehicles/components/availability_section";
+import { availabilityQuerySchema } from "@/modules/vehicles/domain/availability_period";
+
+type VehicleDetailPageProps = { params: Promise<{ id: string }>; searchParams?: Promise<Record<string, string | string[] | undefined>> };
 
 function findVehicle(id: string) {
   return vehicles.find((vehicle) => vehicle.id === id);
@@ -17,9 +20,11 @@ export async function generateMetadata({ params }: VehicleDetailPageProps): Prom
   return vehicle ? { title: `${vehicle.model} | Locação de veículos`, description: `Detalhes para consulta do ${vehicle.model}.` } : {};
 }
 
-export default async function VehicleDetailPage({ params }: VehicleDetailPageProps) {
+export default async function VehicleDetailPage({ params, searchParams }: VehicleDetailPageProps) {
   const vehicle = await loadCatalogVehicle((await params).id);
   if (!vehicle) notFound();
+  const dates = await searchParams;
+  const period = availabilityQuerySchema.safeParse({ vehicleId: vehicle.id, pickupDate: dates?.pickupDate, returnDate: dates?.returnDate });
 
   return <main className="vehicle-detail-page">
     <Link href="/#veiculos" className="back-link">← Voltar ao catálogo</Link>
@@ -31,8 +36,9 @@ export default async function VehicleDetailPage({ params }: VehicleDetailPagePro
         <p className="illustrative-notice">A imagem é ilustrativa e não representa necessariamente o veículo real.</p>
         <dl className="detail-specs"><div><dt>Ano</dt><dd>{vehicle.year ?? "Ano a confirmar"}</dd></div><div><dt>Cor</dt><dd>{vehicle.color}</dd></div><div><dt>Câmbio</dt><dd>{vehicle.transmission}</dd></div><div><dt>Característica informada</dt><dd>{vehicle.feature}</dd></div></dl>
         <section className="detail-terms" aria-labelledby="detail-terms-title"><h2 id="detail-terms-title">Condições principais</h2><dl><div><dt>Aluguel semanal</dt><dd>{formatRentalMoney(rentalTerms.weeklyRentalCents)}</dd></div><div><dt>Caução</dt><dd>{formatRentalMoney(rentalTerms.securityDepositCents)}</dd></div><div><dt>Total inicial</dt><dd>{formatRentalMoney(rentalTerms.initialTotalCents)}</dd></div><div><dt>Pagamento</dt><dd>{rentalTerms.paymentMethods.join(" ou ")}</dd></div></dl><p>A caução pode ser parcelada em até {rentalTerms.securityDepositMaxInstallments} vezes sem juros.</p><p>A devolução ocorre em até {rentalTerms.securityDepositRefundMaxDays} dias após o encerramento e a vistoria, conforme o contrato e as condições do veículo.</p></section>
+        <AvailabilitySection vehicleId={vehicle.id} initialPickupDate={period.success ? period.data.pickupDate : ""} initialReturnDate={period.success ? period.data.returnDate : ""} />
         <p className="detail-warning">A manifestação de interesse não garante aprovação ou disponibilidade.</p>
-        {vehicle.acceptsInterest ? <Link href={`/interesse?vehicle=${vehicle.id}`} className="button primary detail-action">Tenho interesse</Link> : <p className="availability-unavailable" role="status">Este veículo não está disponível para novas manifestações de interesse.</p>}
+        {vehicle.acceptsInterest ? <Link href={`/interesse?vehicle=${vehicle.id}`} className="button secondary detail-action">Tenho interesse</Link> : <p className="availability-unavailable" role="status">Este veículo não está disponível para novas manifestações de interesse.</p>}
       </div>
     </article>
   </main>;
