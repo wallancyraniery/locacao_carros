@@ -12,6 +12,8 @@ const timestamps = () => ({
 // Dates stay ISO calendar strings; never convert a rental day through a timezone.
 export const reservationRequests = pgTable("reservation_requests", {
   id: uuid("id").defaultRandom().primaryKey(),
+  // Nullable for requests created before the atomic intake boundary.
+  operationId: uuid("operation_id").unique("reservation_requests_operation_id_unique"),
   organizationId: uuid("organization_id").notNull().references(() => organizations.id, { onDelete: "restrict" }),
   vehicleId: uuid("vehicle_id").notNull(),
   leadId: uuid("lead_id").notNull(),

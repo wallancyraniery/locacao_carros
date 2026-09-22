@@ -71,6 +71,13 @@
       "when": 1790000000000,
       "tag": "0009_availability_query",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1790004674541,
+      "tag": "0010_reservation_request_submission",
+      "breakpoints": true
     }
   ]
 }

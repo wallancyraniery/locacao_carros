@@ -38,3 +38,5 @@ Escolha verificações proporcionais ao risco:
 3. inclua a suíte completa, integração PostgreSQL e build quando o fluxo, schema, repository, ambiente ou comportamento de produção forem afetados;
 4. para documentação pura, revise links e comandos e rode `git diff --check`; execute testes documentais existentes, se houver;
 5. não declare operação remota comprovada a partir de teste local ou diagnóstico somente leitura.
+
+A submissão atômica é coberta por `tests/reservation_submission.test.ts` e `tests/postgresql/reservation_submission.integration.test.ts`: validação, fail-closed, repository real sob runtime, contagens 1/1/1 sem agenda, retries sequenciais/concorrentes, lead preexistente, conflitos de operação, elegibilidade e período, adjacência, rollback em falha de solicitação/outbox e ausência do evento, privilégios e recusa de anon/authenticated. Aplicar 0000–0010 em banco local exclusivo `_test` antes da integração. Não executar essas fixtures no Supabase.
