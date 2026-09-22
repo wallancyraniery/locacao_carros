@@ -3,6 +3,7 @@ import { sql } from "drizzle-orm";
 import { z } from "zod";
 import { getDatabase } from "@/modules/database/client.server";
 import type { ReservationSubmissionRepository } from "../domain/reservation_submission_repository";
+import { reportReservationSubmissionError } from "./reservation_submission_diagnostic";
 
 const receiptSchema = z.array(z.object({
   lead_id: z.uuid(), reservation_request_id: z.uuid(), status: z.literal("requested"),
@@ -26,7 +27,10 @@ export const reservationSubmissionRepository: ReservationSubmissionRepository = 
         )
       `);
       const receipt = receiptSchema.safeParse(rows);
-      if (!receipt.success) return { status: "error" };
+      if (!receipt.success) {
+        reportReservationSubmissionError("reservation_submission");
+        return { status: "error" };
+      }
       const row = receipt.data[0];
       return { status: "success", leadId: row.lead_id, reservationRequestId: row.reservation_request_id, requestStatus: row.status };
     } catch (error) {
@@ -34,7 +38,9 @@ export const reservationSubmissionRepository: ReservationSubmissionRepository = 
         case "P1001": return { status: "invalid" };
         case "P1002": return { status: "unavailable" };
         case "P1003": return { status: "conflict" };
-        default: return { status: "error" };
+        default:
+          reportReservationSubmissionError("reservation_submission", error);
+          return { status: "error" };
       }
     }
   },

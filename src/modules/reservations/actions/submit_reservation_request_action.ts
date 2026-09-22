@@ -6,6 +6,7 @@ import { reservationSubmissionRepository } from "../infrastructure/reservation_s
 import { turnstileSubmissionProtection } from "@/modules/leads/infrastructure/turnstile_submission_protection.server";
 import { formatLeadValidationErrors, leadSubmissionSchema, type LeadSubmissionInput } from "@/modules/leads/validation/lead_submission";
 import type { ReservationContext, ReservationFormState } from "../components/reservation_form_state";
+import { reportReservationSubmissionError } from "../infrastructure/reservation_submission_diagnostic";
 
 export async function submitReservationRequestAction(
   context: ReservationContext, _state: ReservationFormState, formData: FormData,
@@ -38,7 +39,8 @@ export async function submitReservationRequestAction(
       default:
         return { status: "error", values: retryValues, message: "Não foi possível concluir o envio agora. Tente novamente neste formulário." };
     }
-  } catch {
+  } catch (error) {
+    reportReservationSubmissionError("reservation_submission", error);
     return { status: "error", values: retryValues, message: "Não foi possível concluir o envio agora. Tente novamente neste formulário." };
   }
 }
