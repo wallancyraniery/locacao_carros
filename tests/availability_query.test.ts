@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 import { availabilityQuerySchema } from "@/modules/vehicles/domain/availability_period";
 import { checkAvailability } from "@/modules/vehicles/application/check_availability.server";
+import { queryAvailability } from "@/modules/vehicles/application/query_availability.server";
 import type { AvailabilityRepository } from "@/modules/vehicles/domain/availability_repository";
 
 vi.mock("server-only", () => ({}));
@@ -30,8 +31,20 @@ describe("consulta de disponibilidade", () => {
     { ...valid, vehicleId: "outro" },
   ])("recusa entrada inválida sem chamar o banco: %j", async (input) => {
     const isAvailable = vi.fn();
+    expect(await queryAvailability({ isAvailable }, input)).toEqual({ status: "invalid" });
     expect(await checkAvailability({ isAvailable }, input)).toBe(false);
     expect(isAvailable).not.toHaveBeenCalled();
+  });
+
+  it.each([true, false])("distingue o resultado %s do repository", async (available) => {
+    const isAvailable = vi.fn().mockResolvedValue(available);
+    expect(await queryAvailability({ isAvailable }, valid)).toEqual({ status: available ? "available" : "unavailable" });
+    expect(isAvailable).toHaveBeenCalledExactlyOnceWith(valid);
+  });
+
+  it("classifica falha técnica como error sem expor detalhes", async () => {
+    const isAvailable = vi.fn().mockRejectedValue(new Error("SQL privado"));
+    expect(await queryAvailability({ isAvailable }, valid)).toEqual({ status: "error" });
   });
 
   it("retorna exclusivamente o boolean da consulta", async () => {
