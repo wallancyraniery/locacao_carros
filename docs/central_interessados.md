@@ -33,3 +33,5 @@ Rodar `npm run db:migrate:test` com `TEST_DATABASE_URL` apontando exclusivamente
 - [SSR com Next.js](https://supabase.com/docs/guides/auth/server-side/creating-a-client) e [cuidados com cache](https://supabase.com/docs/guides/auth/server-side/advanced-guide).
 - [Changelog Supabase](https://supabase.com/changelog), incluindo [grants explícitos da Data API](https://supabase.com/changelog/45329-breaking-change-tables-not-exposed-to-data-and-graphql-api-automatically) e [Node.js 22+](https://supabase.com/changelog/45715-deprecation-notice-dropping-support-for-node-js-20).
 - [Claims por transação no PostgREST](https://docs.postgrest.org/en/stable/references/transactions.html#request-headers-cookies-and-jwt-claims).
+
+A [Central da locadora e frota](tenant_dashboard_fleet.md) integra /admin/interessados à navegação comum, mantendo sua leitura e paginação. /admin agora mostra visão geral da frota; Reservas não oferece operação de agenda neste checkpoint.

@@ -3,7 +3,6 @@ import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import OnboardingPage from "@/app/admin/onboarding/page";
 import SignupPage from "@/app/admin/cadastro/page";
 import ReadyPage from "@/app/admin/pronto/page";
-import AdminPage from "@/app/admin/page";
 import LoginPage from "@/app/admin/login/page";
 import { OrganizationForm, SignupForm } from "@/modules/onboarding/forms";
 
@@ -24,16 +23,16 @@ it("usuário sem locadora encontra os seis campos e pode sair", async () => {
   expect(screen.queryByRole("link")).toBeNull();
   expect(document.body.textContent).not.toMatch(/tenant|organization_id|membership|RLS/);
 });
-it.each([OnboardingPage, ReadyPage, AdminPage])("anônimo vai para login", async (page) => {
+it.each([OnboardingPage, ReadyPage])("anônimo vai para login", async (page) => {
   mocks.access.mockResolvedValue({ status: "anonymous" });
   await expect(page()).rejects.toThrow("redirect:/admin/login");
 });
-it.each([AdminPage, ReadyPage, SignupPage])("sem locadora segue para onboarding", async (page) => {
+it.each([ReadyPage, SignupPage])("sem locadora segue para onboarding", async (page) => {
   await expect(page()).rejects.toThrow("redirect:/admin/onboarding");
 });
-it.each([OnboardingPage, SignupPage, AdminPage])("usuário associado entra na Central sem novo formulário", async (page) => {
+it.each([OnboardingPage, SignupPage])("usuário associado entra na Central sem novo formulário", async (page) => {
   mocks.access.mockResolvedValue({ status: "ready", organizationId: crypto.randomUUID() });
-  await expect(page()).rejects.toThrow("redirect:/admin/interessados");
+  await expect(page()).rejects.toThrow("redirect:/admin");
 });
 it("login encaminha usuário autenticado para a decisão centralizada em /admin", async () => {
   await expect(LoginPage({})).rejects.toThrow("redirect:/admin");
@@ -44,7 +43,7 @@ it("confirmação de locadora exige associação e oferece entrada privada", asy
   mocks.access.mockResolvedValue({ status: "ready", organizationId: crypto.randomUUID() });
   render(await ReadyPage());
   expect(screen.getByRole("heading", { name: "Sua locadora está pronta" })).toBeVisible();
-  expect(screen.getByRole("link", { name: "Entrar na minha locadora" })).toHaveAttribute("href", "/admin/interessados");
+  expect(screen.getByRole("link", { name: "Entrar na minha locadora" })).toHaveAttribute("href", "/admin");
 });
 it.each([OnboardingPage, ReadyPage, SignupPage])("falha técnica não libera criação nem anuncia sucesso", async (page) => {
   mocks.access.mockResolvedValue({ status: "error" });

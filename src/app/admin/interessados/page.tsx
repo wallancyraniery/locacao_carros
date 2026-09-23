@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { LogoutForm } from "@/modules/admin/auth_forms";
+import { CentralShell } from "@/modules/central/shell";
 import { InterestedLeads } from "@/modules/admin/interested_leads";
 import { loadInterestedLeads } from "@/modules/admin/interested_leads.server";
 
@@ -10,8 +10,7 @@ export default async function InterestedLeadsPage({ searchParams }: { searchPara
   const result = await loadInterestedLeads(page);
   if (result.status === "anonymous") redirect("/admin/login");
   if (result.status === "unassigned") redirect("/admin/onboarding");
-  return <>
-    <header className="admin-heading"><h1>Interessados</h1><LogoutForm /></header>
+  return <CentralShell title="Interessados" current="/admin/interessados">
     {result.status === "error" && <p role="alert">Não foi possível carregar os interessados. Tente novamente mais tarde.</p>}
     {result.status === "ready" && <>
       <InterestedLeads leads={result.leads} />
@@ -21,5 +20,5 @@ export default async function InterestedLeadsPage({ searchParams }: { searchPara
         {result.hasNext && <Link prefetch={false} href={`/admin/interessados?page=${page + 1}`}>Próxima</Link>}
       </nav>
     </>}
-  </>;
+  </CentralShell>;
 }

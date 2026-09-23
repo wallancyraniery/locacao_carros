@@ -9,6 +9,6 @@ export default async function ReadyPage() {
   if (access.status === "unassigned") redirect("/admin/onboarding");
   return <section className="admin-login"><LogoutForm />{access.status === "error"
     ? <p role="alert">Não foi possível verificar seu acesso agora. Tente novamente em instantes.</p>
-    : <><h1>Sua locadora está pronta</h1><p>Você já pode acessar sua área privada.</p><Link className="button primary" prefetch={false} href="/admin/interessados">Entrar na minha locadora</Link></>}
+    : <><h1>Sua locadora está pronta</h1><p>Você já pode acessar sua área privada.</p><Link className="button primary" prefetch={false} href="/admin">Entrar na minha locadora</Link></>}
   </section>;
 }
