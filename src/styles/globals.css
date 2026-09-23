@@ -103,3 +103,14 @@ fieldset { margin:0 0 22px; padding:0; border:0; }
 .availability-section button:disabled, .availability-section fieldset:disabled button, .reservation-fields:disabled button { opacity:.65; cursor:wait; }
 @media (max-width:800px) { .reservation-layout { grid-template-columns:1fr; } .availability-section { padding:20px; } .reservation-page .back-link { margin-bottom:28px; } }
 @media (max-width:480px) { .availability-section .form-grid { grid-template-columns:1fr; gap:0; } .reservation-summary { padding:20px; } }
+
+/* Private rental workspace: reuse existing typography and form/table styles. */
+.central-nav { display: flex; flex-wrap: wrap; gap: .5rem; margin: 1rem 0 2rem; border-bottom: 1px solid #d6dbe1; padding-bottom: 1rem; }
+.central-nav a { padding: .6rem .9rem; border-radius: .4rem; }
+.central-nav a[aria-current="page"] { background: #e8eef5; color: #142c46; font-weight: 700; }
+.central-metrics { display: flex; flex-wrap: wrap; gap: 1rem; margin: 1.5rem 0; }
+.central-metrics > div { border: 1px solid #d6dbe1; border-radius: .5rem; padding: 1rem 1.5rem; }
+.central-metrics dd { font-size: 2rem; margin: .3rem 0 0; font-weight: 700; }
+.central-details > div { margin: 1rem 0; }
+.central-details dt { font-weight: 700; }
+.central-details dd { margin: .3rem 0 0; overflow-wrap: anywhere; }

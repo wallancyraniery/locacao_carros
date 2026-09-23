@@ -262,7 +262,9 @@ describe("contrato de acesso do runtime", () => {
           expect(await sql`select id from organizations`).toHaveLength(0);
           await expect(sql`select created_at from organizations`).rejects.toThrow();
           expect(await sql`select id from vehicles`).toHaveLength(0);
-          await expect(sql`select operational_status from vehicles`).rejects.toThrow();
+          // Fleet grants narrow read columns; RLS still hides every unassociated vehicle.
+          expect(await sql`select operational_status, color, weekly_price_cents, is_demo, created_at from vehicles`).toHaveLength(0);
+          await expect(sql`select updated_at from vehicles`).rejects.toThrow();
         }
         await expect(sql`insert into rental_leads (id, operation_id, organization_id, full_name, phone, city, has_definitive_license, status) values (${crypto.randomUUID()}, ${crypto.randomUUID()}, ${demoOrganizationId}, 'Pessoa', '(12) 99999-9999', 'Cidade', true, 'new')`).rejects.toThrow();
       } finally { await sql`reset role`; }

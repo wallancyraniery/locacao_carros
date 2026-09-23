@@ -85,6 +85,13 @@
       "when": 1790101922500,
       "tag": "0011_tenant_onboarding",
       "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1790133075996,
+      "tag": "0012_tenant_dashboard_fleet",
+      "breakpoints": true
     }
   ]
 }

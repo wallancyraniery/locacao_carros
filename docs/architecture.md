@@ -54,3 +54,5 @@ O checkpoint de submissão acrescenta `src/modules/reservations`: caso de uso se
 O fluxo público de reservas conecta as fronteiras existentes: página do veículo → Server Action de consulta → `/reserva` com parâmetros revalidados → formulário próprio → Server Action de submissão → caso de uso atômico. O contexto da operação é gerado/vinculado no servidor e permanece estável nos retries do formulário. `LeadFields` compartilha apresentação e contratos de validação com o interesse, mantendo as actions e semânticas separadas. Ver [fluxo público](reservations_availability.md#fluxo-público-de-solicitação).
 
 O [onboarding da locadora](tenant_onboarding.md) reutiliza Auth SSR e Data API. A RPC pública invoker delega à função privada 0011 para criar organização, owner e recibo atomicamente. Rotas `/admin/cadastro`, `/admin/confirmar`, `/admin/onboarding` e `/admin/pronto` compartilham proxy e cookies com a Central.
+
+A [Central da locadora e frota](tenant_dashboard_fleet.md) acrescenta navegação privada e cadastro owner via RPC estreita 0012. Leituras usam JWT/RLS existentes; a frota exclui demonstrações e não usa o catálogo estático.

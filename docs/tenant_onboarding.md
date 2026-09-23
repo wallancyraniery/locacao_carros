@@ -10,7 +10,7 @@
 
 ## Jornada implementada
 
-`/admin/cadastro` → Supabase Auth → confirmação de e-mail quando exigida → `/admin` → `/admin/onboarding` → `/admin/pronto` → `/admin/interessados`.
+`/admin/cadastro` → Supabase Auth → confirmação de e-mail quando exigida → `/admin` → `/admin/onboarding` → `/admin/pronto` → `/admin` (Visão geral).
 
 `/admin/login` permanece o acesso por senha e redireciona para `/admin`, que decide entre onboarding e Central; o botão Sair usa o logout local já existente. Usuários autenticados sem associação são encaminhados ao cadastro da locadora. Com associação, entram na Central e não recebem um segundo formulário. Falhas de consulta não são interpretadas como ausência de associação.
 

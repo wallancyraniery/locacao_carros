@@ -52,3 +52,5 @@ O primeiro checkpoint acrescenta o núcleo persistido para solicitações reais 
 - Evoluir observabilidade e operação conforme o ambiente de hospedagem escolhido.
 
 O fluxo público de solicitação de reserva agora convive com a manifestação de interesse: veículo → período → consulta → dados → solicitação recebida. A locadora ainda analisa a solicitação; o envio não é aprovação e o período permanece não confirmado até aprovação. Não há waitlist pública, aprovação automática ou entrega externa de notificações neste checkpoint.
+
+A [Central da locadora](tenant_dashboard_fleet.md) oferece visão geral, listagem/cadastro inicial de frota por owner, dados da locadora e os Interessados existentes. Reservas apresenta orientação honesta sobre os limites atuais, sem simular gestão pronta.
