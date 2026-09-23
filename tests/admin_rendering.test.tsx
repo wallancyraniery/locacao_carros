@@ -1,8 +1,9 @@
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-const mocks = vi.hoisted(() => ({ load: vi.fn(), login: vi.fn(), logout: vi.fn(), redirect: vi.fn((path: string) => { throw new Error(`redirect:${path}`); }) }));
+const mocks = vi.hoisted(() => ({ load: vi.fn(), access: vi.fn(), login: vi.fn(), logout: vi.fn(), redirect: vi.fn((path: string) => { throw new Error(`redirect:${path}`); }) }));
 vi.mock("@/modules/admin/interested_leads.server", () => ({ loadInterestedLeads: mocks.load }));
 vi.mock("@/modules/admin/auth_actions", () => ({ login: mocks.login, logout: mocks.logout }));
+vi.mock("@/modules/onboarding/access.server", () => ({ loadOrganizationAccess: mocks.access }));
 vi.mock("next/navigation", () => ({ redirect: mocks.redirect }));
 import Page from "@/app/admin/interessados/page";
 import LoginPage from "@/app/admin/login/page";
@@ -10,15 +11,15 @@ import Loading from "@/app/admin/interessados/loading";
 import ErrorPage from "@/app/admin/interessados/error";
 import { InterestedLeads } from "@/modules/admin/interested_leads";
 
-beforeEach(() => vi.clearAllMocks());
+beforeEach(() => { vi.clearAllMocks(); mocks.access.mockResolvedValue({ status: "anonymous" }); });
 afterEach(cleanup);
 describe('Central: estados visíveis', () => {
-  it('mostra somente login por senha', () => {
-    render(<LoginPage />);
+  it('mostra login por senha e acesso ao cadastro', async () => {
+    render(await LoginPage({}));
     expect(screen.getByLabelText('E-mail')).toHaveAttribute('autocomplete', 'username');
     expect(screen.getByLabelText('Senha')).toHaveAttribute('type', 'password');
     expect(screen.getByRole('button', { name: 'Entrar' })).toBeVisible();
-    expect(screen.queryByRole('link')).not.toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Criar conta' })).toHaveAttribute('href', '/admin/cadastro');
   });
   it('renderiza estado vazio e logout', async () => {
     mocks.load.mockResolvedValue({ status: 'ready', leads: [], hasNext: false });
@@ -30,11 +31,15 @@ describe('Central: estados visíveis', () => {
     mocks.load.mockResolvedValue({ status: 'anonymous' });
     await expect(Page({ searchParams: Promise.resolve({}) })).rejects.toThrow('redirect:/admin/login');
   });
-  it.each(['unassigned', 'error'])('estado %s não renderiza tabela', async (status) => {
+  it.each(['error'])('estado %s não renderiza tabela', async (status) => {
     mocks.load.mockResolvedValue({ status });
     render(await Page({ searchParams: Promise.resolve({}) }));
     expect(screen.queryByRole('table')).not.toBeInTheDocument();
     expect(screen.getByRole(status === 'error' ? 'alert' : 'status')).toBeVisible();
+  });
+  it('usuário sem locadora vai para o onboarding', async () => {
+    mocks.load.mockResolvedValue({ status: 'unassigned' });
+    await expect(Page({ searchParams: Promise.resolve({}) })).rejects.toThrow('redirect:/admin/onboarding');
   });
   it('renderiza carregamento e erro sem detalhes internos', () => {
     const reset = vi.fn();

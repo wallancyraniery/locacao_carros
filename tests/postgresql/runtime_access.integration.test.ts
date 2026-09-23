@@ -254,9 +254,13 @@ describe("contrato de acesso do runtime", () => {
     for (const role of ["anon", "authenticated"]) {
       await sql.unsafe(`set role ${role}`);
       try {
-        await expect(sql`select id from organizations`).rejects.toThrow();
-        if (role === "anon") await expect(sql`select id from vehicles`).rejects.toThrow();
-        else {
+        if (role === "anon") {
+          await expect(sql`select id from organizations`).rejects.toThrow();
+          await expect(sql`select id from vehicles`).rejects.toThrow();
+        } else {
+          // Onboarding permits a narrow SELECT; RLS still hides every unassociated organization.
+          expect(await sql`select id from organizations`).toHaveLength(0);
+          await expect(sql`select created_at from organizations`).rejects.toThrow();
           expect(await sql`select id from vehicles`).toHaveLength(0);
           await expect(sql`select operational_status from vehicles`).rejects.toThrow();
         }

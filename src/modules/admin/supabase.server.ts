@@ -15,7 +15,8 @@ export async function createAdminClient() {
         try {
           for (const { name, value, options } of values) store.set(name, value, options);
         } catch {
-          // Server Components cannot write cookies; the /admin proxy refreshes them.
+          // Server Components cannot write cookies; the /admin proxy refreshes them,
+          // including signup, confirmation and onboarding routes.
         }
       },
     },
