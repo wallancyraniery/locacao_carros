@@ -27,8 +27,8 @@ function client() {
       exchangeCodeForSession: vi.fn().mockResolvedValue({ data: { session: { access_token: "synthetic" } }, error: null }) } };
 }
 let api: ReturnType<typeof client>;
-beforeEach(() => { vi.clearAllMocks(); api = client(); mocks.create.mockResolvedValue(api); vi.spyOn(console, "error").mockImplementation(() => undefined); });
-afterEach(() => { expect(console.error).not.toHaveBeenCalled(); vi.restoreAllMocks(); });
+beforeEach(() => { vi.stubEnv("APP_PUBLIC_ORIGIN", "https://locacao-carros.vercel.app"); vi.clearAllMocks(); api = client(); mocks.create.mockResolvedValue(api); vi.spyOn(console, "error").mockImplementation(() => undefined); });
+afterEach(() => { expect(console.error).not.toHaveBeenCalled(); vi.restoreAllMocks(); vi.unstubAllEnvs(); });
 
 describe("cadastro e confirmação", () => {
   it.each([{ email: "bad" }, { password: "curta" }, { confirmPassword: "diferente" }, { password: "x".repeat(129) }])("valida credenciais %j antes de chamar Auth", async (overrides) => {
@@ -39,21 +39,46 @@ describe("cadastro e confirmação", () => {
   it("usuário retornado sem sessão aguarda confirmação, sem fingir autenticação", async () => {
     const result = await signup({}, form(credentials));
     expect(result.message).toContain("Se o cadastro puder ser concluído");
-    expect(api.auth.signUp).toHaveBeenCalledWith({ email: credentials.email, password: credentials.password });
+    expect(api.auth.signUp).toHaveBeenCalledWith({ email: credentials.email, password: credentials.password,
+      options: { emailRedirectTo: "https://locacao-carros.vercel.app/admin/confirmar" } });
     expect(mocks.redirect).not.toHaveBeenCalled();
     expect(api.rpc).not.toHaveBeenCalled();
+  });
+  it("usa a origem local explicitamente configurada e ignora destinos do formulário", async () => {
+    vi.stubEnv("APP_PUBLIC_ORIGIN", "http://localhost:3000");
+    vi.stubEnv("NODE_ENV", "development");
+    await signup({}, form({ ...credentials, emailRedirectTo: "https://evil.test", origin: "https://evil.test" }));
+    expect(api.auth.signUp).toHaveBeenCalledWith({ email: credentials.email, password: credentials.password,
+      options: { emailRedirectTo: "http://localhost:3000/admin/confirmar" } });
+  });
+  it.each([undefined, "https://user:private-token@example.test", "invalid"])("configuração inválida falha neutra antes de Auth (%s)", async (origin) => {
+    const pending = await signup({}, form(credentials));
+    mocks.create.mockClear(); api.auth.signUp.mockClear();
+    vi.stubEnv("APP_PUBLIC_ORIGIN", origin);
+    const logs = ["log", "info", "warn", "debug"] as const;
+    for (const method of logs) vi.spyOn(console, method).mockImplementation(() => undefined);
+    const result = await signup({}, form(credentials));
+    expect(result).toEqual(pending);
+    expect(mocks.create).not.toHaveBeenCalled();
+    expect(api.auth.signUp).not.toHaveBeenCalled();
+    expect(mocks.redirect).not.toHaveBeenCalled();
+    for (const value of [credentials.email, credentials.password, "private-token"]) expect(JSON.stringify(result)).not.toContain(value);
+    for (const method of logs) expect(console[method]).not.toHaveBeenCalled();
   });
   it("sessão real segue para o roteamento privado", async () => {
     api.auth.signUp.mockResolvedValue({ data: { user: { id: userId }, session: { access_token: "synthetic" } }, error: null } as never);
     await expect(signup({}, form(credentials))).rejects.toThrow("redirect:/admin");
   });
   it("conta existente, confirmação pendente e falha técnica têm resposta neutra idêntica", async () => {
+    const logs = ["log", "info", "warn", "debug"] as const;
+    for (const method of logs) vi.spyOn(console, method).mockImplementation(() => undefined);
     const pending = await signup({}, form(credentials));
     api.auth.signUp.mockResolvedValueOnce({ data: { user: null, session: null }, error: { message: secret, code: "user_already_exists" } } as never);
     expect(await signup({}, form(credentials))).toEqual(pending);
     api.auth.signUp.mockRejectedValueOnce(new Error(secret));
     expect(await signup({}, form(credentials))).toEqual(pending);
-    expect(JSON.stringify(pending)).not.toContain(credentials.email);
+    for (const value of [credentials.email, credentials.password, secret, "synthetic"]) expect(JSON.stringify(pending)).not.toContain(value);
+    for (const method of logs) expect(console[method]).not.toHaveBeenCalled();
   });
   it("confirma token somente como signup e usa destino fixo", async () => {
     const response = await GET(new NextRequest("https://app.example.test/admin/confirmar?token_hash=synthetic&type=signup&next=https://evil.test"));

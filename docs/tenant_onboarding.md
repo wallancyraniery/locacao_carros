@@ -40,6 +40,10 @@ SELECT das colunas de organização e da role é concedido a authenticated, com 
 
 Este checkpoint não acessa Supabase remoto nem altera configuração Auth. Para ativação, o operador precisa habilitar signup por e-mail no projeto (a documentação anterior orientava desabilitá-lo), mantendo login anônimo desabilitado. Confirmação de e-mail, políticas de senha, limites e SMTP continuam sob controle do Supabase; não são simulados pelo aplicativo.
 
+Configurar `APP_PUBLIC_ORIGIN` no servidor: `https://locacao-carros.vercel.app` em produção ou `http://localhost:3000` no desenvolvimento local. É uma origem explícita, sem credenciais, caminho, query ou fragmento; HTTP só é aceito para loopback fora de produção. Não há fallback para Host, X-Forwarded-Host ou URL de preview. Ausência ou valor inválido impede signup e mantém a resposta pública neutra, sem logs do valor.
+
+O signup envia `options.emailRedirectTo` como `<APP_PUBLIC_ORIGIN>/admin/confirmar`, compatível com o template padrão e o callback PKCE existente. Esse destino exato deve constar em Redirect URLs do Supabase em cada ambiente. Nenhuma configuração remota é alterada pelo código.
+
 Configurar Site URL com a origem confiável da aplicação. Para confirmação SSR, o template **Confirm signup** pode usar:
 
 ```html

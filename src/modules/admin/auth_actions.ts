@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { createAdminClient } from "./supabase.server";
+import { signupConfirmationUrl } from "@/config/signup_confirmation.server";
 import { signupSchema } from "@/modules/onboarding/validation";
 
 export type AuthState = { message?: string };
@@ -14,8 +15,9 @@ export async function signup(_state: AuthState, form: FormData): Promise<AuthSta
   if (!input.success) return { message: "Informe um e-mail válido e uma senha de 12 a 128 caracteres. As senhas devem ser iguais." };
   let authenticated = false;
   try {
+    const emailRedirectTo = signupConfirmationUrl();
     const client = await createAdminClient();
-    const { data, error } = await client.auth.signUp({ email: input.data.email, password: input.data.password });
+    const { data, error } = await client.auth.signUp({ email: input.data.email, password: input.data.password, options: { emailRedirectTo } });
     // Confirmation settings belong to Auth. A user object alone is not a session.
     authenticated = !error && !!data.session;
   } catch {
