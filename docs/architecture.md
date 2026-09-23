@@ -56,3 +56,5 @@ O fluxo público de reservas conecta as fronteiras existentes: página do veícu
 O [onboarding da locadora](tenant_onboarding.md) reutiliza Auth SSR e Data API. A RPC pública invoker delega à função privada 0011 para criar organização, owner e recibo atomicamente. Rotas `/admin/cadastro`, `/admin/confirmar`, `/admin/onboarding` e `/admin/pronto` compartilham proxy e cookies com a Central.
 
 A [Central da locadora e frota](tenant_dashboard_fleet.md) acrescenta navegação privada e cadastro owner via RPC estreita 0012. Leituras usam JWT/RLS existentes; a frota exclui demonstrações e não usa o catálogo estático.
+
+A [página pública por slug](public_tenant_storefront.md) apresenta a projeção mínima da locadora e sua frota elegível pela fronteira de leitura 0013, sem expor tabelas ou habilitar reservas de tenants reais.

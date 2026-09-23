@@ -62,7 +62,7 @@ Auth/HTTP são simulados nos testes locais; isso não comprova SMTP, entrega de 
 
 A inspeção visual local não foi concluída: a página de cadastro respondeu HTTP 200, mas a automação do Chromium travou na comunicação com o navegador. O servidor e o gateway sintético foram encerrados sem criar registros. As verificações de interface desta entrega são os testes de componentes e rotas; isso não comprova uma jornada visual completa.
 
-Ainda não há veículos por locadora, equipe, convite, planos, pagamento ou marketplace. O slug é reservado, sem página pública da locadora. Os dados de privacidade são armazenados; não substituem o aviso do catálogo demo nem criam uma política jurídica pronta. Organizações legadas podem continuar com esses campos ausentes até uma etapa de edição.
+A frota inicial e a página pública por slug foram acrescentadas em checkpoints posteriores; veja [Central e frota](tenant_dashboard_fleet.md) e [vitrine pública](public_tenant_storefront.md). Equipe, convite, planos, pagamento e marketplace continuam fora do escopo. Os dados de privacidade são armazenados; não substituem o aviso do catálogo demo nem criam uma política jurídica pronta. Organizações legadas podem continuar com esses campos ausentes até uma etapa de edição.
 
 ## Referências
 

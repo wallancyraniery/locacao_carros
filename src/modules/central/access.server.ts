@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import { createAdminClient } from "@/modules/admin/supabase.server";
 
 export type Organization = { id: string; name: string; slug: string; city: string | null;
-  data_controller: string | null; privacy_channel_label: string | null; privacy_channel_url: string | null };
+  storefront_status: "draft" | "published"; data_controller: string | null; privacy_channel_label: string | null; privacy_channel_url: string | null };
 export async function loadCentralContext() {
   try {
     const client = await createAdminClient();
@@ -14,7 +14,7 @@ export async function loadCentralContext() {
     if (!membership.data) return { status: "unassigned" as const };
     if (!["owner", "member"].includes(membership.data.role)) return { status: "error" as const };
     const organization = await client.from("organizations")
-      .select("id,name,slug,city,data_controller,privacy_channel_label,privacy_channel_url")
+      .select("id,name,slug,city,storefront_status,data_controller,privacy_channel_label,privacy_channel_url")
       .eq("id", membership.data.organization_id).maybeSingle();
     if (organization.error || !organization.data) return { status: "error" as const };
     return { status: "ready" as const, client, role: membership.data.role as "owner" | "member", organization: organization.data as Organization };

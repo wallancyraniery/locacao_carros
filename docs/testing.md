@@ -48,3 +48,5 @@ Na verificação local deste checkpoint, o navegador percorreu veículo → cons
 O onboarding é coberto por `tenant_onboarding.test.ts`, `tenant_onboarding_rendering.test.tsx` e `postgresql/tenant_onboarding.integration.test.ts`: signup/confirmação simulados, roteamento, identidade não fornecida pelo formulário, criação/rollback, concorrência e isolamento com roles reais locais. Aplique também 0011 somente no banco local de testes antes da integração.
 
 O checkpoint [Central/frota](tenant_dashboard_fleet.md) acrescenta central_access, fleet, fleet_rendering e postgresql/fleet.integration: autorização, RLS, validação, grants mínimos, idempotência e UI. Aplique também 0012 somente no banco local _test antes da integração.
+
+A vitrine por slug é coberta por storefront, storefront_client, storefront_publication e postgresql/storefront.integration: projeção pública, draft/published/despublicação, owner/member, isolamento, filtros de exposição, permissões e estados de renderização. Aplique 0013 somente no banco local _test para integração.

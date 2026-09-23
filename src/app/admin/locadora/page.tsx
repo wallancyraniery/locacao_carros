@@ -1,3 +1,5 @@
+import { PublicationForm } from "@/modules/storefront/publication_form";
+import { storefrontSlug } from "@/modules/storefront/contracts";
 import { requireCentralContext } from "@/modules/central/access.server";
 import { CentralShell, CentralError } from "@/modules/central/shell";
 
@@ -10,6 +12,10 @@ export default async function OrganizationPage() {
     <dl className="central-details">{[["Nome", org.name], ["Identificador público reservado", org.slug], ["Cidade", org.city],
       ["Responsável pelo tratamento dos dados", org.data_controller], ["Canal de privacidade", org.privacy_channel_label],
       ["Endereço do canal de privacidade", org.privacy_channel_url]].map(([label, value]) => <div key={label}><dt>{label}</dt><dd>{value || "Não informado"}</dd></div>)}</dl>
-    <p>Seu identificador está reservado. A página pública da locadora ainda não foi disponibilizada.</p>
+    <h2>Vitrine pública</h2>
+    <p>{org.storefront_status === "published" ? "Publicada" : "Não publicada"}</p>
+    <p>Ao publicar, o nome, a cidade e os veículos elegíveis da locadora ficam visíveis para quem acessar seu link. Despublicar impede novas consultas à vitrine.</p>
+    {context.role === "owner" ? <PublicationForm status={org.storefront_status} /> : <p>Somente a conta proprietária pode publicar ou despublicar a vitrine.</p>}
+    {org.storefront_status === "published" && storefrontSlug.safeParse(org.slug).success && <p><a href={`/locadoras/${org.slug}`}>Ver página pública da locadora</a></p>}
   </CentralShell>;
 }

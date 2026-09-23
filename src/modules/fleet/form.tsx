@@ -15,7 +15,7 @@ export function VehicleForm({ operationId }: { operationId: string }) {
       <div className="form-field"><label htmlFor="fleet-color">Cor</label><input id="fleet-color" {...field("color")} maxLength={60} required /></div>
       <div className="form-field"><label htmlFor="fleet-price">Valor semanal (R$)</label><input id="fleet-price" {...field("weeklyPrice")} inputMode="decimal" maxLength={11} placeholder="700,00" required /></div>
       <div className="form-field"><label htmlFor="fleet-state">Estado operacional</label><select id="fleet-state" {...field("operationalStatus")}><option value="active">Ativo</option><option value="inactive">Inativo</option></select><p className="field-help">Ativo não significa disponível em todas as datas. Reservas e bloqueios definem a disponibilidade por período.</p></div>
-      <p>O cadastro ainda não inclui fotos nem publicação em página pública.</p>
+      <p>Veículos cadastrados aqui como ativos aparecem na vitrine quando ela estiver publicada. O cadastro ainda não inclui fotos.</p>
       <button className="button primary" disabled={pending}>{pending ? "Cadastrando…" : "Cadastrar veículo"}</button>
     </fieldset>{state.message && <p role="alert">{state.message}</p>}
   </form>;

@@ -1,10 +1,13 @@
-import { pgTable, text, timestamp, uniqueIndex, uuid } from "drizzle-orm/pg-core";
+import { pgEnum, pgTable, text, timestamp, uniqueIndex, uuid } from "drizzle-orm/pg-core";
+
+export const storefrontStatusEnum = pgEnum("storefront_status", ["draft", "published"]);
 
 export const organizations = pgTable("organizations", {
   id: uuid("id").defaultRandom().primaryKey(),
   name: text("name").notNull(),
   slug: text("slug").notNull(),
   city: text("city"),
+  storefrontStatus: storefrontStatusEnum("storefront_status").default("draft").notNull(),
   dataController: text("data_controller"),
   privacyChannelLabel: text("privacy_channel_label"),
   privacyChannelUrl: text("privacy_channel_url"),

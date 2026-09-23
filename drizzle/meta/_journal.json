@@ -92,6 +92,13 @@
       "when": 1790133075996,
       "tag": "0012_tenant_dashboard_fleet",
       "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1790181721852,
+      "tag": "0013_public_tenant_storefront",
+      "breakpoints": true
     }
   ]
 }
