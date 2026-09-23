@@ -26,7 +26,7 @@ Nesta fase não devem ser coletados CPF, RG, número ou imagem da CNH, comprovan
 
 O MVP inclui catálogo e detalhes demonstrativos, formulário de interesse, validação no servidor, verificação de veículo disponível, persistência do lead, resposta clara ao usuário, banco PostgreSQL, testes e ambiente Supabase de homologação com acesso restrito.
 
-A primeira entrega da Central de Interessados acrescenta autenticação restrita e listagem somente leitura por organização. Provisionamento de usuários é administrativo; edição de leads, recuperação de acesso na aplicação e pagamentos permanecem fora do escopo. Veja [central_interessados.md](central_interessados.md).
+A primeira entrega da Central de Interessados acrescenta autenticação restrita e listagem somente leitura por organização. O cadastro self-service de proprietários e sua primeira locadora está descrito em [tenant_onboarding.md](tenant_onboarding.md); associações administrativas existentes são preservadas. Edição de leads, recuperação de acesso na aplicação e pagamentos permanecem fora do escopo. Veja [central_interessados.md](central_interessados.md).
 
 ## Evolução: Reservas e Disponibilidade
 

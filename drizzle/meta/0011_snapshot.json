@@ -1,0 +1,1545 @@
+{
+  "id": "efccc9e3-c41c-4f48-8053-771d8d8037e7",
+  "prevId": "527546dc-1475-47db-92b9-cd121a691ca5",
+  "version": "7",
+  "dialect": "postgresql",
+  "tables": {
+    "public.organizations": {
+      "name": "organizations",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "name": {
+          "name": "name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "slug": {
+          "name": "slug",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "city": {
+          "name": "city",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "data_controller": {
+          "name": "data_controller",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "privacy_channel_label": {
+          "name": "privacy_channel_label",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "privacy_channel_url": {
+          "name": "privacy_channel_url",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "organizations_slug_unique_idx": {
+          "name": "organizations_slug_unique_idx",
+          "columns": [
+            {
+              "expression": "slug",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.vehicles": {
+      "name": "vehicles",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "organization_id": {
+          "name": "organization_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "brand": {
+          "name": "brand",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "model": {
+          "name": "model",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "version": {
+          "name": "version",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "year": {
+          "name": "year",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "color": {
+          "name": "color",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "weekly_price_cents": {
+          "name": "weekly_price_cents",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "status": {
+          "name": "status",
+          "type": "vehicle_status",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "operational_status": {
+          "name": "operational_status",
+          "type": "vehicle_operational_status",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "is_demo": {
+          "name": "is_demo",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "vehicles_organization_id_idx": {
+          "name": "vehicles_organization_id_idx",
+          "columns": [
+            {
+              "expression": "organization_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "vehicles_organization_status_idx": {
+          "name": "vehicles_organization_status_idx",
+          "columns": [
+            {
+              "expression": "organization_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "status",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "vehicles_organization_operational_status_idx": {
+          "name": "vehicles_organization_operational_status_idx",
+          "columns": [
+            {
+              "expression": "organization_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "operational_status",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "vehicles_organization_id_fk": {
+          "name": "vehicles_organization_id_fk",
+          "tableFrom": "vehicles",
+          "tableTo": "organizations",
+          "columnsFrom": [
+            "organization_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "vehicles_organization_id_id_unique": {
+          "name": "vehicles_organization_id_id_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "organization_id",
+            "id"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {
+        "vehicles_weekly_price_cents_non_negative_check": {
+          "name": "vehicles_weekly_price_cents_non_negative_check",
+          "value": "\"vehicles\".\"weekly_price_cents\" >= 0"
+        },
+        "vehicles_year_reasonable_check": {
+          "name": "vehicles_year_reasonable_check",
+          "value": "\"vehicles\".\"year\" between 1900 and 2200"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.rental_leads": {
+      "name": "rental_leads",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "operation_id": {
+          "name": "operation_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "organization_id": {
+          "name": "organization_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "vehicle_id": {
+          "name": "vehicle_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "full_name": {
+          "name": "full_name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "phone": {
+          "name": "phone",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "email": {
+          "name": "email",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "city": {
+          "name": "city",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "has_definitive_license": {
+          "name": "has_definitive_license",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "usage_purpose": {
+          "name": "usage_purpose",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "has_ear": {
+          "name": "has_ear",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "driver_platform": {
+          "name": "driver_platform",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "preferred_contact_time": {
+          "name": "preferred_contact_time",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "status": {
+          "name": "status",
+          "type": "lead_status",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'new'"
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "rental_leads_organization_id_idx": {
+          "name": "rental_leads_organization_id_idx",
+          "columns": [
+            {
+              "expression": "organization_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "rental_leads_organization_status_idx": {
+          "name": "rental_leads_organization_status_idx",
+          "columns": [
+            {
+              "expression": "organization_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "status",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "rental_leads_organization_created_at_idx": {
+          "name": "rental_leads_organization_created_at_idx",
+          "columns": [
+            {
+              "expression": "organization_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "created_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "rental_leads_operation_id_unique": {
+          "name": "rental_leads_operation_id_unique",
+          "columns": [
+            {
+              "expression": "operation_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "rental_leads_organization_id_fk": {
+          "name": "rental_leads_organization_id_fk",
+          "tableFrom": "rental_leads",
+          "tableTo": "organizations",
+          "columnsFrom": [
+            "organization_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        },
+        "rental_leads_vehicle_id_fk": {
+          "name": "rental_leads_vehicle_id_fk",
+          "tableFrom": "rental_leads",
+          "tableTo": "vehicles",
+          "columnsFrom": [
+            "vehicle_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "rental_leads_organization_id_id_unique": {
+          "name": "rental_leads_organization_id_id_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "organization_id",
+            "id"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {
+        "rental_leads_usage_purpose_check": {
+          "name": "rental_leads_usage_purpose_check",
+          "value": "\"rental_leads\".\"usage_purpose\" is null or \"rental_leads\".\"usage_purpose\" in ('professional_app', 'other')"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.lead_status_history": {
+      "name": "lead_status_history",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "organization_id": {
+          "name": "organization_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "rental_lead_id": {
+          "name": "rental_lead_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "from_status": {
+          "name": "from_status",
+          "type": "lead_status",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "to_status": {
+          "name": "to_status",
+          "type": "lead_status",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "note": {
+          "name": "note",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "lead_status_history_rental_lead_created_at_idx": {
+          "name": "lead_status_history_rental_lead_created_at_idx",
+          "columns": [
+            {
+              "expression": "rental_lead_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "created_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "lead_status_history_organization_id_fk": {
+          "name": "lead_status_history_organization_id_fk",
+          "tableFrom": "lead_status_history",
+          "tableTo": "organizations",
+          "columnsFrom": [
+            "organization_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        },
+        "lead_status_history_rental_lead_id_fk": {
+          "name": "lead_status_history_rental_lead_id_fk",
+          "tableFrom": "lead_status_history",
+          "tableTo": "rental_leads",
+          "columnsFrom": [
+            "rental_lead_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.organization_memberships": {
+      "name": "organization_memberships",
+      "schema": "",
+      "columns": {
+        "user_id": {
+          "name": "user_id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "organization_id": {
+          "name": "organization_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "role": {
+          "name": "role",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'member'"
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "organization_memberships_organization_id_idx": {
+          "name": "organization_memberships_organization_id_idx",
+          "columns": [
+            {
+              "expression": "organization_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "organization_memberships_organization_id_fk": {
+          "name": "organization_memberships_organization_id_fk",
+          "tableFrom": "organization_memberships",
+          "tableTo": "organizations",
+          "columnsFrom": [
+            "organization_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "organization_memberships_role_check": {
+          "name": "organization_memberships_role_check",
+          "value": "\"organization_memberships\".\"role\" in ('owner', 'member')"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.notification_outbox": {
+      "name": "notification_outbox",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "organization_id": {
+          "name": "organization_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "reservation_request_id": {
+          "name": "reservation_request_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "event_type": {
+          "name": "event_type",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "status": {
+          "name": "status",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'pending'"
+        },
+        "attempts": {
+          "name": "attempts",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "available_at": {
+          "name": "available_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "locked_at": {
+          "name": "locked_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "sent_at": {
+          "name": "sent_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "last_error_code": {
+          "name": "last_error_code",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "notification_outbox_dispatch_idx": {
+          "name": "notification_outbox_dispatch_idx",
+          "columns": [
+            {
+              "expression": "status",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "available_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "where": "\"notification_outbox\".\"status\" in ('pending', 'failed')",
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "notification_outbox_organization_idx": {
+          "name": "notification_outbox_organization_idx",
+          "columns": [
+            {
+              "expression": "organization_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "notification_outbox_organization_id_organizations_id_fk": {
+          "name": "notification_outbox_organization_id_organizations_id_fk",
+          "tableFrom": "notification_outbox",
+          "tableTo": "organizations",
+          "columnsFrom": [
+            "organization_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        },
+        "notification_outbox_request_tenant_fk": {
+          "name": "notification_outbox_request_tenant_fk",
+          "tableFrom": "notification_outbox",
+          "tableTo": "reservation_requests",
+          "columnsFrom": [
+            "organization_id",
+            "reservation_request_id"
+          ],
+          "columnsTo": [
+            "organization_id",
+            "id"
+          ],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "notification_outbox_event_unique": {
+          "name": "notification_outbox_event_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "reservation_request_id",
+            "event_type"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {
+        "notification_outbox_event_check": {
+          "name": "notification_outbox_event_check",
+          "value": "\"notification_outbox\".\"event_type\" in ('reservation.requested', 'reservation.approved', 'reservation.rejected', 'reservation.cancelled')"
+        },
+        "notification_outbox_status_check": {
+          "name": "notification_outbox_status_check",
+          "value": "\"notification_outbox\".\"status\" in ('pending', 'processing', 'failed', 'sent') and ((\"notification_outbox\".\"status\" = 'processing') = (\"notification_outbox\".\"locked_at\" is not null)) and ((\"notification_outbox\".\"status\" = 'sent') = (\"notification_outbox\".\"sent_at\" is not null))"
+        },
+        "notification_outbox_attempts_check": {
+          "name": "notification_outbox_attempts_check",
+          "value": "\"notification_outbox\".\"attempts\" >= 0"
+        },
+        "notification_outbox_error_check": {
+          "name": "notification_outbox_error_check",
+          "value": "\"notification_outbox\".\"last_error_code\" is null or \"notification_outbox\".\"last_error_code\" in ('provider_unavailable', 'rate_limited', 'delivery_rejected', 'unknown')"
+        }
+      },
+      "isRLSEnabled": true
+    },
+    "public.reservation_requests": {
+      "name": "reservation_requests",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "operation_id": {
+          "name": "operation_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "organization_id": {
+          "name": "organization_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "vehicle_id": {
+          "name": "vehicle_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "lead_id": {
+          "name": "lead_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "pickup_date": {
+          "name": "pickup_date",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "return_date": {
+          "name": "return_date",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "status": {
+          "name": "status",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'requested'"
+        },
+        "request_notes": {
+          "name": "request_notes",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "decision_reason": {
+          "name": "decision_reason",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "decided_by": {
+          "name": "decided_by",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "decided_at": {
+          "name": "decided_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "cancelled_by": {
+          "name": "cancelled_by",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "cancelled_at": {
+          "name": "cancelled_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "reservation_requests_organization_status_idx": {
+          "name": "reservation_requests_organization_status_idx",
+          "columns": [
+            {
+              "expression": "organization_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "status",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "created_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "reservation_requests_vehicle_idx": {
+          "name": "reservation_requests_vehicle_idx",
+          "columns": [
+            {
+              "expression": "organization_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "vehicle_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "reservation_requests_lead_idx": {
+          "name": "reservation_requests_lead_idx",
+          "columns": [
+            {
+              "expression": "organization_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "lead_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "reservation_requests_organization_id_organizations_id_fk": {
+          "name": "reservation_requests_organization_id_organizations_id_fk",
+          "tableFrom": "reservation_requests",
+          "tableTo": "organizations",
+          "columnsFrom": [
+            "organization_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        },
+        "reservation_requests_vehicle_tenant_fk": {
+          "name": "reservation_requests_vehicle_tenant_fk",
+          "tableFrom": "reservation_requests",
+          "tableTo": "vehicles",
+          "columnsFrom": [
+            "organization_id",
+            "vehicle_id"
+          ],
+          "columnsTo": [
+            "organization_id",
+            "id"
+          ],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        },
+        "reservation_requests_lead_tenant_fk": {
+          "name": "reservation_requests_lead_tenant_fk",
+          "tableFrom": "reservation_requests",
+          "tableTo": "rental_leads",
+          "columnsFrom": [
+            "organization_id",
+            "lead_id"
+          ],
+          "columnsTo": [
+            "organization_id",
+            "id"
+          ],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "reservation_requests_operation_id_unique": {
+          "name": "reservation_requests_operation_id_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "operation_id"
+          ]
+        },
+        "reservation_requests_organization_id_id_unique": {
+          "name": "reservation_requests_organization_id_id_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "organization_id",
+            "id"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {
+        "reservation_requests_period_check": {
+          "name": "reservation_requests_period_check",
+          "value": "\"reservation_requests\".\"pickup_date\" < \"reservation_requests\".\"return_date\" and isfinite(\"reservation_requests\".\"pickup_date\") and isfinite(\"reservation_requests\".\"return_date\")"
+        },
+        "reservation_requests_status_check": {
+          "name": "reservation_requests_status_check",
+          "value": "\"reservation_requests\".\"status\" in ('requested', 'approved', 'rejected', 'cancelled')"
+        },
+        "reservation_requests_notes_check": {
+          "name": "reservation_requests_notes_check",
+          "value": "char_length(\"reservation_requests\".\"request_notes\") <= 1000 and char_length(\"reservation_requests\".\"decision_reason\") <= 1000"
+        },
+        "reservation_requests_decision_check": {
+          "name": "reservation_requests_decision_check",
+          "value": "(\"reservation_requests\".\"status\" = 'requested' and \"reservation_requests\".\"decided_at\" is null and \"reservation_requests\".\"decided_by\" is null) or (\"reservation_requests\".\"status\" in ('approved', 'rejected') and \"reservation_requests\".\"decided_at\" is not null and \"reservation_requests\".\"decided_by\" is not null) or (\"reservation_requests\".\"status\" = 'cancelled' and ((\"reservation_requests\".\"decided_at\" is null and \"reservation_requests\".\"decided_by\" is null) or (\"reservation_requests\".\"decided_at\" is not null and \"reservation_requests\".\"decided_by\" is not null)))"
+        },
+        "reservation_requests_cancellation_check": {
+          "name": "reservation_requests_cancellation_check",
+          "value": "(\"reservation_requests\".\"status\" = 'cancelled' and \"reservation_requests\".\"cancelled_at\" is not null and \"reservation_requests\".\"cancelled_by\" is not null) or (\"reservation_requests\".\"status\" <> 'cancelled' and \"reservation_requests\".\"cancelled_at\" is null and \"reservation_requests\".\"cancelled_by\" is null)"
+        }
+      },
+      "isRLSEnabled": true
+    },
+    "public.vehicle_schedule_blocks": {
+      "name": "vehicle_schedule_blocks",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "organization_id": {
+          "name": "organization_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "vehicle_id": {
+          "name": "vehicle_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "reservation_request_id": {
+          "name": "reservation_request_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "kind": {
+          "name": "kind",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "pickup_date": {
+          "name": "pickup_date",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "return_date": {
+          "name": "return_date",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "status": {
+          "name": "status",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'active'"
+        },
+        "reason": {
+          "name": "reason",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "released_at": {
+          "name": "released_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "vehicle_schedule_blocks_vehicle_idx": {
+          "name": "vehicle_schedule_blocks_vehicle_idx",
+          "columns": [
+            {
+              "expression": "organization_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "vehicle_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "vehicle_schedule_blocks_organization_id_organizations_id_fk": {
+          "name": "vehicle_schedule_blocks_organization_id_organizations_id_fk",
+          "tableFrom": "vehicle_schedule_blocks",
+          "tableTo": "organizations",
+          "columnsFrom": [
+            "organization_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        },
+        "vehicle_schedule_blocks_vehicle_tenant_fk": {
+          "name": "vehicle_schedule_blocks_vehicle_tenant_fk",
+          "tableFrom": "vehicle_schedule_blocks",
+          "tableTo": "vehicles",
+          "columnsFrom": [
+            "organization_id",
+            "vehicle_id"
+          ],
+          "columnsTo": [
+            "organization_id",
+            "id"
+          ],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        },
+        "vehicle_schedule_blocks_request_tenant_fk": {
+          "name": "vehicle_schedule_blocks_request_tenant_fk",
+          "tableFrom": "vehicle_schedule_blocks",
+          "tableTo": "reservation_requests",
+          "columnsFrom": [
+            "organization_id",
+            "reservation_request_id"
+          ],
+          "columnsTo": [
+            "organization_id",
+            "id"
+          ],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "vehicle_schedule_blocks_request_unique": {
+          "name": "vehicle_schedule_blocks_request_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "reservation_request_id"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {
+        "vehicle_schedule_blocks_period_check": {
+          "name": "vehicle_schedule_blocks_period_check",
+          "value": "\"vehicle_schedule_blocks\".\"pickup_date\" < \"vehicle_schedule_blocks\".\"return_date\" and isfinite(\"vehicle_schedule_blocks\".\"pickup_date\") and isfinite(\"vehicle_schedule_blocks\".\"return_date\")"
+        },
+        "vehicle_schedule_blocks_kind_check": {
+          "name": "vehicle_schedule_blocks_kind_check",
+          "value": "\"vehicle_schedule_blocks\".\"kind\" in ('reservation', 'maintenance', 'preparation', 'manual') and ((\"vehicle_schedule_blocks\".\"kind\" = 'reservation') = (\"vehicle_schedule_blocks\".\"reservation_request_id\" is not null))"
+        },
+        "vehicle_schedule_blocks_status_check": {
+          "name": "vehicle_schedule_blocks_status_check",
+          "value": "(\"vehicle_schedule_blocks\".\"status\" = 'active' and \"vehicle_schedule_blocks\".\"released_at\" is null) or (\"vehicle_schedule_blocks\".\"status\" = 'released' and \"vehicle_schedule_blocks\".\"released_at\" is not null)"
+        },
+        "vehicle_schedule_blocks_reason_check": {
+          "name": "vehicle_schedule_blocks_reason_check",
+          "value": "char_length(\"vehicle_schedule_blocks\".\"reason\") <= 1000"
+        }
+      },
+      "isRLSEnabled": true
+    },
+    "public.waitlist_entries": {
+      "name": "waitlist_entries",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "organization_id": {
+          "name": "organization_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "vehicle_id": {
+          "name": "vehicle_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "vehicle_preference": {
+          "name": "vehicle_preference",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "lead_id": {
+          "name": "lead_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "pickup_date": {
+          "name": "pickup_date",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "return_date": {
+          "name": "return_date",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "status": {
+          "name": "status",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'waiting'"
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "waitlist_entries_vehicle_idx": {
+          "name": "waitlist_entries_vehicle_idx",
+          "columns": [
+            {
+              "expression": "organization_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "vehicle_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "status",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "waitlist_entries_lead_idx": {
+          "name": "waitlist_entries_lead_idx",
+          "columns": [
+            {
+              "expression": "organization_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "lead_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "waitlist_entries_organization_id_organizations_id_fk": {
+          "name": "waitlist_entries_organization_id_organizations_id_fk",
+          "tableFrom": "waitlist_entries",
+          "tableTo": "organizations",
+          "columnsFrom": [
+            "organization_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        },
+        "waitlist_entries_vehicle_tenant_fk": {
+          "name": "waitlist_entries_vehicle_tenant_fk",
+          "tableFrom": "waitlist_entries",
+          "tableTo": "vehicles",
+          "columnsFrom": [
+            "organization_id",
+            "vehicle_id"
+          ],
+          "columnsTo": [
+            "organization_id",
+            "id"
+          ],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        },
+        "waitlist_entries_lead_tenant_fk": {
+          "name": "waitlist_entries_lead_tenant_fk",
+          "tableFrom": "waitlist_entries",
+          "tableTo": "rental_leads",
+          "columnsFrom": [
+            "organization_id",
+            "lead_id"
+          ],
+          "columnsTo": [
+            "organization_id",
+            "id"
+          ],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "waitlist_entries_period_check": {
+          "name": "waitlist_entries_period_check",
+          "value": "\"waitlist_entries\".\"pickup_date\" < \"waitlist_entries\".\"return_date\" and isfinite(\"waitlist_entries\".\"pickup_date\") and isfinite(\"waitlist_entries\".\"return_date\")"
+        },
+        "waitlist_entries_target_check": {
+          "name": "waitlist_entries_target_check",
+          "value": "(\"waitlist_entries\".\"vehicle_id\" is not null) <> (\"waitlist_entries\".\"vehicle_preference\" is not null) and (\"waitlist_entries\".\"vehicle_preference\" is null or char_length(trim(\"waitlist_entries\".\"vehicle_preference\")) between 1 and 200)"
+        },
+        "waitlist_entries_status_check": {
+          "name": "waitlist_entries_status_check",
+          "value": "\"waitlist_entries\".\"status\" in ('waiting', 'notified', 'cancelled')"
+        }
+      },
+      "isRLSEnabled": true
+    }
+  },
+  "enums": {
+    "public.lead_status": {
+      "name": "lead_status",
+      "schema": "public",
+      "values": [
+        "new",
+        "contacted",
+        "under_review",
+        "approved",
+        "rejected",
+        "converted"
+      ]
+    },
+    "public.vehicle_operational_status": {
+      "name": "vehicle_operational_status",
+      "schema": "public",
+      "values": [
+        "active",
+        "inactive"
+      ]
+    },
+    "public.vehicle_status": {
+      "name": "vehicle_status",
+      "schema": "public",
+      "values": [
+        "available",
+        "reserved",
+        "rented",
+        "maintenance",
+        "inactive"
+      ]
+    }
+  },
+  "schemas": {},
+  "sequences": {},
+  "roles": {},
+  "policies": {},
+  "views": {},
+  "_meta": {
+    "columns": {},
+    "schemas": {},
+    "tables": {}
+  }
+}

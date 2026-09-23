@@ -63,7 +63,7 @@ describe('identidade e leitura privadas', () => {
 describe('login e logout somente por senha', () => {
   it('login envia credenciais apenas para Auth e redireciona para caminho fixo', async () => {
     const input = form(); input.set('next', 'https://example.test');
-    await expect(login({}, input)).rejects.toThrow('redirect:/admin/interessados');
+    await expect(login({}, input)).rejects.toThrow('redirect:/admin');
     expect(api.auth.signInWithPassword).toHaveBeenCalledWith({ email: 'pessoa@example.test', password: 'senha-sintetica' });
     expect(mocks.revalidate).toHaveBeenCalledWith('/admin', 'layout');
   });
