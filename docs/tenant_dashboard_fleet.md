@@ -10,11 +10,11 @@ Vehicles já possui marca, modelo, versão, ano, cor, preço semanal em centavos
 
 /admin passa a ser Visão geral após validar sessão e associação. Sem sessão vai para login; sem associação vai para onboarding; erro falha fechado. Cadastro, onboarding já concluído e confirmação de locadora encaminham para /admin.
 
-CentralShell e CentralNavigation compartilham cinco destinos: Visão geral, Veículos, Reservas, Interessados e Minha locadora. Interessados mantém URL, paginação, projeção e acesso existentes. Minha locadora mostra apenas a própria organização, em leitura; campos legados ausentes aparecem como não informados. O slug continua reservado, sem link para página pública inexistente.
+CentralShell e CentralNavigation compartilham cinco destinos: Visão geral, Veículos, Reservas, Interessados e Minha locadora. Interessados mantém URL, paginação, projeção e acesso existentes. Minha locadora mostra apenas a própria organização, em leitura; campos legados ausentes aparecem como não informados. Minha locadora mostra o estado da [vitrine pública](public_tenant_storefront.md), inicialmente não publicada. Owner pode publicar/despublicar; o link público aparece somente quando publicada. Esse controle foi acrescentado pela migration 0013.
 
 Visão geral conta exatamente veículos ativos e inativos não demonstrativos sob RLS, sem estimativas de receita, ocupação ou disponibilidade. Falha na consulta é erro, nunca zero. Veículos tem paginação de 50 com ordem estável e exclui is_demo. Associação member mantém leitura herdada da Central, mas só owner vê e executa cadastro.
 
-Reservas é orientação explícita: não lista registros, não implica ausência de solicitações e não oferece aprovação/calendário. Explica análise, pendências sem bloqueios, estado operacional versus disponibilidade e encaminha para Interessados. Nenhum grant novo foi concedido às tabelas de reservas. Os fluxos públicos ainda atendem exclusivamente o catálogo demonstrativo; cadastrar frota não publica veículos.
+Reservas é orientação explícita: não lista registros, não implica ausência de solicitações e não oferece aprovação/calendário. Explica análise, pendências sem bloqueios, estado operacional versus disponibilidade e encaminha para Interessados. Nenhum grant novo foi concedido às tabelas de reservas. Os fluxos públicos de solicitação ainda atendem exclusivamente o catálogo demonstrativo. A vitrine por slug, quando publicada pelo owner, apresenta a frota elegível sem habilitar solicitações para tenants reais.
 
 ## Migration 0012 e autorização
 
@@ -34,6 +34,6 @@ Cadastro usa uma única transação e o estado do formulário preserva campos/op
 
 Testes de aplicação cobrem autenticação, autorização owner/member, validação, payload sem identidade fornecida pelo formulário, contagem exata, erros fail-closed, navegação e retry. PostgreSQL local cobre tenants A/B, RLS restritiva, metadata forjada, Auth anônimo, revogação, escrita negada, validação SQL, retries sequenciais/concorrentes, conflitos, demo e configuração da fronteira.
 
-Aplicar 0012 somente mediante operação administrativa autorizada; nesta entrega apenas o banco local _test é migrado. Integrações Auth/HTTP de teste são sintéticas e não comprovam configuração remota. Ainda não há edição/exclusão de veículos, placa/chassi, upload, publicação por slug, operação de reservas, equipe, billing ou políticas comerciais avançadas.
+Aplicar 0012 somente mediante operação administrativa autorizada; nesta entrega apenas o banco local _test é migrado. Integrações Auth/HTTP de teste são sintéticas e não comprovam configuração remota. Ainda não há edição/exclusão de veículos, placa/chassi, upload, operação de reservas, equipe, billing ou políticas comerciais avançadas.
 
 A tentativa de inspeção em navegador usou cópia temporária, Auth sintético e banco local. A página de login renderizou, mas a jornada autenticada não foi comprovada: houve timeout sob pressão de memória. Navegador/gateway/servidor temporários foram encerrados e a fixture removida. A evidência funcional deste checkpoint é a suíte de componentes e a integração PostgreSQL, não um E2E completo.

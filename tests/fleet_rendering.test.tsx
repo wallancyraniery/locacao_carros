@@ -10,8 +10,9 @@ const mocks = vi.hoisted(() => ({ context: vi.fn(), fleet: vi.fn(), summary: vi.
 vi.mock("@/modules/central/access.server", () => ({ requireCentralContext: mocks.context }));
 vi.mock("@/modules/fleet/queries.server", () => ({ loadFleet: mocks.fleet, loadFleetSummary: mocks.summary }));
 vi.mock("@/modules/fleet/actions", () => ({ createVehicle: mocks.create }));
+vi.mock("@/modules/storefront/actions", () => ({ setStorefrontStatus: vi.fn() }));
 vi.mock("@/modules/admin/auth_actions", () => ({ logout: mocks.logout }));
-const context = { status: "ready", role: "owner", client: {}, organization: { id: "opaque", name: "Locadora A", slug: "locadora-a", city: "Cidade sintética" } };
+const context = { status: "ready", role: "owner", client: {}, organization: { id: "opaque", name: "Locadora A", slug: "locadora-a", city: "Cidade sintética", storefront_status: "published" } };
 beforeEach(() => { vi.clearAllMocks(); mocks.context.mockResolvedValue(context); mocks.summary.mockResolvedValue({ status: "ready", active: 2, inactive: 1 }); mocks.fleet.mockResolvedValue({ status: "ready", vehicles: [], hasNext: false }); });
 afterEach(cleanup);
 it("visão geral mostra contagens reais e cinco destinos úteis", async () => {
@@ -37,8 +38,8 @@ it("member pode ler mas não recebe formulário de cadastro", async () => {
   mocks.context.mockResolvedValue({ ...context, role: "member" }); render(await NewVehicle());
   expect(screen.getByRole("alert")).toHaveTextContent("Somente a conta proprietária"); expect(screen.queryByRole("button", { name: "Cadastrar veículo" })).toBeNull();
 });
-it("minha locadora apresenta dados próprios sem anunciar página pública pronta", async () => {
-  render(await Organization()); expect(screen.getByText("locadora-a")).toBeVisible(); expect(screen.getByText(/página pública da locadora ainda/)).toBeVisible();
+it("minha locadora apresenta link para a vitrine pelo próprio slug", async () => {
+  render(await Organization()); expect(screen.getByText("locadora-a")).toBeVisible(); expect(screen.getByRole("link", { name: "Ver página pública da locadora" })).toHaveAttribute("href", "/locadoras/locadora-a");
   expect(screen.queryByRole("link", { name: "locadora-a" })).toBeNull();
 });
 it("reservas explica limites sem fingir listagem, calendário ou ausência de registros", async () => {

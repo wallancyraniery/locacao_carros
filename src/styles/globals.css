@@ -114,3 +114,7 @@ fieldset { margin:0 0 22px; padding:0; border:0; }
 .central-details > div { margin: 1rem 0; }
 .central-details dt { font-weight: 700; }
 .central-details dd { margin: .3rem 0 0; overflow-wrap: anywhere; }
+
+.storefront-no-photo { display: grid; place-items: center; min-height: 180px; background: #eef1f4; color: #526171; }
+.storefront { overflow-wrap: anywhere; }
+.storefront-pagination, .storefront-journeys { display: flex; flex-wrap: wrap; gap: 1rem; margin-block: 1.5rem; }
