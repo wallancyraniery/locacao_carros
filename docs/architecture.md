@@ -58,3 +58,5 @@ O [onboarding da locadora](tenant_onboarding.md) reutiliza Auth SSR e Data API. 
 A [Central da locadora e frota](tenant_dashboard_fleet.md) acrescenta navegação privada e cadastro owner via RPC estreita 0012. Leituras usam JWT/RLS existentes; a frota exclui demonstrações e não usa o catálogo estático.
 
 A [página pública por slug](public_tenant_storefront.md) apresenta a projeção mínima da locadora e sua frota elegível pela fronteira de leitura 0013, sem expor tabelas ou habilitar reservas de tenants reais.
+
+A [fundação visual Improve](ui_foundation.md) documenta tokens, tipografia local e componentes de apresentação compartilhados, preservando as fronteiras funcionais existentes.

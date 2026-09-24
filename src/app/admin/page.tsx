@@ -7,7 +7,7 @@ export default async function AdminPage() {
   const context = await requireCentralContext();
   if (context.status !== "ready") return <CentralError />;
   const summary = await loadFleetSummary(context.client);
-  return <CentralShell title="Visão geral" current="/admin" name={context.organization.name}>
+  return <CentralShell title="Visão geral" current="/admin" name={context.organization.name} email={context.email} role={context.role}>
     <p>Acompanhe a frota da sua locadora e consulte os interessados recebidos.</p>
     {summary.status === "error" ? <p role="alert">Não foi possível consultar a frota agora.</p> :
       <dl className="central-metrics"><div><dt>Veículos ativos</dt><dd>{summary.active}</dd></div><div><dt>Veículos inativos</dt><dd>{summary.inactive}</dd></div></dl>}

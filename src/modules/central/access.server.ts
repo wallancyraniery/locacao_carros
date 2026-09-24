@@ -17,7 +17,7 @@ export async function loadCentralContext() {
       .select("id,name,slug,city,storefront_status,data_controller,privacy_channel_label,privacy_channel_url")
       .eq("id", membership.data.organization_id).maybeSingle();
     if (organization.error || !organization.data) return { status: "error" as const };
-    return { status: "ready" as const, client, role: membership.data.role as "owner" | "member", organization: organization.data as Organization };
+    return { status: "ready" as const, client, email: data.user.email ?? null, role: membership.data.role as "owner" | "member", organization: organization.data as Organization };
   } catch { return { status: "error" as const }; }
 }
 export async function requireCentralContext() {

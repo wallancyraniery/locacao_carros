@@ -1,6 +1,7 @@
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 const mocks = vi.hoisted(() => ({ load: vi.fn(), access: vi.fn(), login: vi.fn(), logout: vi.fn(), redirect: vi.fn((path: string) => { throw new Error(`redirect:${path}`); }) }));
+vi.mock("@/modules/central/access.server", () => ({ loadCentralContext: vi.fn().mockResolvedValue({ status: "ready", email: "owner@example.test", role: "owner", organization: { name: "Locadora sintética" } }) }));
 vi.mock("@/modules/admin/interested_leads.server", () => ({ loadInterestedLeads: mocks.load }));
 vi.mock("@/modules/admin/auth_actions", () => ({ login: mocks.login, logout: mocks.logout }));
 vi.mock("@/modules/onboarding/access.server", () => ({ loadOrganizationAccess: mocks.access }));
