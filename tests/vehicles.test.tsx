@@ -57,6 +57,10 @@ describe("veículos demonstrativos", () => {
       else expect(document.querySelector(`a[href="/interesse?vehicle=${id}"]`)).not.toBeInTheDocument();
     });
     expect(screen.getAllByText("Imagem ilustrativa")).toHaveLength(4);
+    expect(screen.getAllByText("Valor demonstrativo")).toHaveLength(4);
+    expect(screen.getAllByRole("link", { name: "Tenho interesse" })).toHaveLength(1);
+    const availableCard = screen.getByRole("heading", { name: "Ford Fiesta" }).closest("article")!;
+    expect(within(availableCard).getAllByRole("link").map((link) => link.textContent)).toEqual(["Tenho interesse", "Ver detalhes"]);
     expect(screen.getByText("Disponível para interesse")).toBeInTheDocument();
     expect(screen.getAllByText("Interesse indisponível")).toHaveLength(6);
     expect(screen.getAllByText("Ano a confirmar")).toHaveLength(2);
@@ -65,9 +69,11 @@ describe("veículos demonstrativos", () => {
   });
   it("apresenta as duas jornadas em HTML e mantém as imagens no catálogo demo", () => {
     render(<HomePage vehicles={vehicles} />);
-    expect(screen.getByRole("heading", { level: 1, name: "Seu próximo passo começa aqui." })).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "Quero alugar um veículo" })).toHaveAttribute("href", "#alugar");
+    expect(screen.getByRole("heading", { level: 1, name: /Locação mais simples\. Mais controle da frota\./ })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Quero alugar" })).toHaveAttribute("href", "#alugar");
     expect(screen.getByRole("link", { name: "Sou locadora" })).toHaveAttribute("href", "/admin/login");
+    expect(screen.getByRole("link", { name: /Criar minha conta/ })).toHaveAttribute("href", "/admin/cadastro");
+    expect(screen.getByRole("link", { name: "Acessar a Central" })).toHaveAttribute("href", "/admin/login");
     expect(screen.queryByAltText("Fachada ilustrativa de uma locadora de veículos à noite")).toBeNull();
     expect(document.querySelector(".hero-car")).not.toBeInTheDocument();
   });
