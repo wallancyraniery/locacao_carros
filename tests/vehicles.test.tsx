@@ -1,7 +1,7 @@
 import { existsSync } from "node:fs";
 import { join } from "node:path";
-import { render, screen, within } from "@testing-library/react";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { cleanup, render, screen, within } from "@testing-library/react";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const loadCatalogVehicle = vi.hoisted(() => vi.fn());
 vi.mock("server-only", () => ({}));
@@ -14,6 +14,8 @@ import { rentalTerms } from "@/modules/rentals/domain/rental_terms";
 import { HomePage } from "@/modules/marketing/components/home_page";
 import VehicleDetailPage from "@/app/veiculos/[id]/page";
 import InterestPage from "@/app/interesse/page";
+
+afterEach(cleanup);
 
 const expectedVehicles = [
   { id: "20000000-0000-4000-8000-000000000001", model: "Fiat Uno Vivace", year: null, color: "Branco", image: "/vehicles/generated/fiat_uno_vivace_branco.png", alt: "Fiat Uno Vivace branco, imagem ilustrativa" },
@@ -55,16 +57,24 @@ describe("veículos demonstrativos", () => {
       else expect(document.querySelector(`a[href="/interesse?vehicle=${id}"]`)).not.toBeInTheDocument();
     });
     expect(screen.getAllByText("Imagem ilustrativa")).toHaveLength(4);
+    expect(screen.getAllByText("Valor demonstrativo")).toHaveLength(4);
+    expect(screen.getAllByRole("link", { name: "Tenho interesse" })).toHaveLength(1);
+    const availableCard = screen.getByRole("heading", { name: "Ford Fiesta" }).closest("article")!;
+    expect(within(availableCard).getAllByRole("link").map((link) => link.textContent)).toEqual(["Tenho interesse", "Ver detalhes"]);
     expect(screen.getByText("Disponível para interesse")).toBeInTheDocument();
     expect(screen.getAllByText("Interesse indisponível")).toHaveLength(6);
     expect(screen.getAllByText("Ano a confirmar")).toHaveLength(2);
     expect(screen.getAllByText("Manual")).toHaveLength(4);
     expect(screen.getAllByText("Completo")).toHaveLength(4);
   });
-  it("usa somente a imagem fornecida no hero e mantém o título em HTML", () => {
+  it("apresenta as duas jornadas em HTML e mantém as imagens no catálogo demo", () => {
     render(<HomePage vehicles={vehicles} />);
-    expect(screen.getByRole("heading", { level: 1, name: "Seu próximo carro para trabalhar começa aqui" })).toBeInTheDocument();
-    expect(screen.getByAltText("Fachada ilustrativa de uma locadora de veículos à noite")).toHaveAttribute("src", expect.stringContaining("locadora_showroom.png"));
+    expect(screen.getByRole("heading", { level: 1, name: /Locação mais simples\. Mais controle da frota\./ })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Quero alugar" })).toHaveAttribute("href", "#alugar");
+    expect(screen.getByRole("link", { name: "Sou locadora" })).toHaveAttribute("href", "/admin/login");
+    expect(screen.getByRole("link", { name: /Criar minha conta/ })).toHaveAttribute("href", "/admin/cadastro");
+    expect(screen.getByRole("link", { name: "Acessar a Central" })).toHaveAttribute("href", "/admin/login");
+    expect(screen.queryByAltText("Fachada ilustrativa de uma locadora de veículos à noite")).toBeNull();
     expect(document.querySelector(".hero-car")).not.toBeInTheDocument();
   });
   it("remove os veículos fictícios e não inventa anos", () => {

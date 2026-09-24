@@ -1,3 +1,5 @@
+import { ImproveBrand } from "@/modules/ui/brand";
+import { AuthFrame } from "@/modules/ui/auth_frame";
 import { LoginForm } from "@/modules/admin/auth_forms";
 import Link from "next/link";
 import { redirect } from "next/navigation";
@@ -7,8 +9,8 @@ export default async function LoginPage({ searchParams }: { searchParams?: Promi
   const access = await loadOrganizationAccess();
   if (access.status === "ready" || access.status === "unassigned") redirect("/admin");
   const params = await searchParams;
-  return <section className="admin-login"><h1>Entre na sua locadora</h1><p>Acesse sua área privada com e-mail e senha.</p>
+  return <AuthFrame><section className="admin-login"><div className="auth-brand"><ImproveBrand /><span>Central da locadora</span></div><h1>Entre na sua locadora</h1><p>Acesse sua área privada com e-mail e senha.</p>
     {params?.confirmation === "failed" && <p role="alert">Não foi possível confirmar esse link. Confira o e-mail mais recente ou tente entrar na sua conta.</p>}
     <LoginForm /><p>Ainda não tem conta? <Link prefetch={false} href="/admin/cadastro">Criar conta</Link></p>
-  </section>;
+  </section></AuthFrame>;
 }

@@ -1,12 +1,13 @@
 import { readFileSync } from "node:fs";
-import { render, screen } from "@testing-library/react";
-import { describe, expect, it, vi } from "vitest";
+import { cleanup, render, screen, within } from "@testing-library/react";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { HomePage } from "@/modules/marketing/components/home_page";
 import { vehicles } from "@/modules/vehicles/data/vehicles";
 import { LeadForm } from "@/modules/leads/components/lead_form";
 import { calculateInitialTotalCents, rentalTerms } from "@/modules/rentals/domain/rental_terms";
 
 vi.mock("@/modules/leads/actions/submit_lead_action", () => ({ submitLeadAction: vi.fn() }));
+afterEach(cleanup);
 
 describe("condições comerciais", () => {
   it("mantém valores em centavos e calcula o total inicial", () => {
@@ -21,15 +22,24 @@ describe("condições comerciais", () => {
     expect(rentalTerms.securityDepositRefundMaxDays).toBe(30);
   });
 
-  it("exibe aluguel, caução, total, pagamento e devolução condicionada", () => {
-    render(<HomePage vehicles={vehicles} />);
-    expect(screen.getAllByText("R$ 700,00").length).toBeGreaterThan(0);
-    expect(screen.getByText("R$ 1.000,00")).toBeInTheDocument();
-    expect(screen.getByText("R$ 1.700,00")).toBeInTheDocument();
-    expect(screen.getByText("Pix ou cartão")).toBeInTheDocument();
-    expect(screen.getByText(/até 5 vezes sem juros/)).toBeInTheDocument();
-    expect(screen.getByText(/até 30 dias após o encerramento do contrato e a vistoria/)).toBeInTheDocument();
-    expect(screen.getByText(/quando não houver danos ou pendências/)).toBeInTheDocument();
+  it("confina os valores da home aos cards demonstrativos e não anuncia condições universais", () => {
+    const { rerender } = render(<HomePage vehicles={vehicles} />);
+    const prices = screen.getAllByText("R$ 700,00");
+    expect(prices).toHaveLength(vehicles.length);
+    expect(screen.getAllByText(/R\$/)).toHaveLength(vehicles.length);
+    for (const price of prices) {
+      const card = price.closest("article");
+      expect(card).not.toBeNull();
+      expect(within(card!).getByText("Demonstração")).toBeInTheDocument();
+      expect(within(card!).getByText("Valor demonstrativo")).toBeInTheDocument();
+    }
+    expect(screen.getByRole("heading", { name: "Cada locadora define suas próprias condições." })).toBeInTheDocument();
+    expect(screen.getByText(/Não representam uma oferta geral da Improve/)).toBeInTheDocument();
+    expect(screen.getByText(/A Improve não estabelece valores ou condições universais/)).toBeInTheDocument();
+    expect(screen.queryByText(/R\$\s*(?:1\.000|1\.700),00|Pix ou cartão|até 5 vezes sem juros|até 30 dias|quando não houver danos ou pendências/)).not.toBeInTheDocument();
+
+    rerender(<HomePage vehicles={[]} />);
+    expect(screen.queryByText(/R\$/)).not.toBeInTheDocument();
   });
 });
 

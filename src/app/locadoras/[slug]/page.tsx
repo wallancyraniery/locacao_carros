@@ -1,4 +1,6 @@
-import Link from "next/link";
+import { ImproveBrand } from "@/modules/ui/brand";
+import { Icon } from "@/modules/ui/icon";
+import { EmptyState, VehiclePlaceholder } from "@/modules/ui/empty_state";
 import { notFound } from "next/navigation";
 import { loadStorefront } from "@/modules/storefront/queries.server";
 import { formatRentalMoney } from "@/modules/rentals/domain/rental_terms";
@@ -19,18 +21,17 @@ export default async function StorefrontPage({ params, searchParams }: {
   if (result.status !== "ready") return null;
   const org = result.storefront;
   return <>
-    <header className="site-header"><Link className="wordmark" href="/" prefetch={false}>Improve</Link></header>
+    <header className="storefront-topbar"><span>Frota da locadora</span><ImproveBrand subtle /></header>
     <main className="section storefront">
-      <p className="eyebrow">Locadora</p><h1>{org.name}</h1>
-      <p>{org.city || "Cidade não informada"}</p>
-      <h2>Veículos</h2>
-      <p>Valores semanais informados pela locadora. A exposição do veículo não confirma disponibilidade para um período. Solicitações por esta página ainda não estão disponíveis.</p>
-      {org.vehicles.length === 0 ? <p>Nenhum veículo para exibir nesta página.</p> : <div className="vehicle-grid">{org.vehicles.map((vehicle, index) => <article className="vehicle-card" key={index}>
-        <div className="storefront-no-photo">Sem foto</div>
-        <div className="card-content"><h3>{vehicle.brand} {vehicle.model}</h3>
-          {vehicle.version && <p>{vehicle.version}</p>}
+      <header className="storefront-heading"><p className="eyebrow">Conheça nossa frota</p><h1>{org.name}</h1><p className="storefront-city"><Icon name="pin" />{org.city || "Cidade não informada"}</p></header>
+      <div className="storefront-section-heading"><h2>Veículos</h2><span className="caption">Valores por semana</span></div>
+      <p className="storefront-notice">Valores semanais informados pela locadora. A exposição do veículo não confirma disponibilidade para um período. Solicitações por esta página ainda não estão disponíveis.</p>
+      {org.vehicles.length === 0 ? <EmptyState>Nenhum veículo para exibir nesta página.</EmptyState> : <div className="vehicle-grid storefront-grid">{org.vehicles.map((vehicle, index) => <article className="vehicle-card storefront-card" key={index}>
+        <VehiclePlaceholder />
+        <div className="card-content"><div className="storefront-card-heading"><h3>{vehicle.brand} {vehicle.model}</h3>
+          {vehicle.version && <p>{vehicle.version}</p>}</div>
           <dl className="vehicle-details"><div><dt>Ano</dt><dd>{vehicle.year}</dd></div><div><dt>Cor</dt><dd>{vehicle.color}</dd></div></dl>
-          <p className="price">{formatRentalMoney(vehicle.weekly_price_cents)} <span>/ semana</span></p>
+          <p className="price"><strong>{formatRentalMoney(vehicle.weekly_price_cents)}</strong> <span>/ semana</span></p>
         </div>
       </article>)}</div>}
       <nav className="storefront-pagination" aria-label="Páginas de veículos">

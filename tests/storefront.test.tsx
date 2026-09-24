@@ -30,6 +30,8 @@ it("renderiza frota real sem imagem, login ou condições inventadas", async () 
   for (const text of ["Cidade A", "Marca Modelo", "Versão", "2024", "Prata", "Sem foto"]) expect(screen.getByText(text)).toBeVisible();
   expect(screen.getByText(/700,50/)).toBeVisible(); expect(screen.queryByRole("img")).toBeNull();
   expect(screen.queryByRole("button")).toBeNull(); expect(screen.queryByText(/caução|entrada|documentação/i)).toBeNull();
+  expect(screen.getByText(/Solicitações por esta página ainda não estão disponíveis/)).toBeVisible();
+  expect(screen.queryByRole("link", { name: /interesse|solicitar|reservar/i })).toBeNull();
 });
 it("organização sem frota continua válida e não recebe veículos demo", async () => {
   mocks.rpc.mockResolvedValue({ data: { ...data, city: null, vehicles: [] }, error: null }); render(await page());
@@ -52,6 +54,8 @@ it.each(["provider", "throw", "private", "tenant"])("falha %s não expõe detalh
 it("home separa jornadas sem exigir conta de locatário ou inventar descoberta", () => {
   render(<HomePage vehicles={[]} />);
   expect(screen.getByRole("link", { name: "Sou locadora" })).toHaveAttribute("href", "/admin/login");
-  expect(screen.getByRole("link", { name: "Quero alugar um veículo" })).toHaveAttribute("href", "#alugar");
+  expect(screen.getByRole("link", { name: "Quero alugar" })).toHaveAttribute("href", "#alugar");
   expect(screen.getByText(/A busca entre várias locadoras ainda não/)).toBeVisible();
+  expect(screen.getByText(/Nas vitrines reais, você pode consultar a frota; solicitações ainda não estão disponíveis/)).toBeVisible();
+  expect(screen.getByText(/a gestão de reservas ainda não está disponível/)).toBeVisible();
 });

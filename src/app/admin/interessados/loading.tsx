@@ -1,1 +1,3 @@
-export default function Loading() { return <p role="status">Carregando interessados…</p>; }
+import { LoadingState } from "@/modules/ui/loading_state";
+
+export default function Loading() { return <LoadingState label="Carregando interessados…" />; }

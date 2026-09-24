@@ -9,11 +9,11 @@ let api: ReturnType<typeof fixture>;
 function fixture() {
   const membership = { select: vi.fn().mockReturnThis(), maybeSingle: vi.fn().mockResolvedValue({ data: { organization_id: organizationId, role: "owner" }, error: null }) };
   const organization = { select: vi.fn().mockReturnThis(), eq: vi.fn().mockReturnThis(), maybeSingle: vi.fn().mockResolvedValue({ data: { id: organizationId, name: "Locadora sintética" }, error: null }) };
-  return { membership, organization, auth: { getUser: vi.fn().mockResolvedValue({ data: { user: { id: crypto.randomUUID() } }, error: null }) }, from: vi.fn((table: string) => table === "organization_memberships" ? membership : organization) };
+  return { membership, organization, auth: { getUser: vi.fn().mockResolvedValue({ data: { user: { id: crypto.randomUUID(), email: "owner@example.test" } }, error: null }) }, from: vi.fn((table: string) => table === "organization_memberships" ? membership : organization) };
 }
 beforeEach(() => { vi.clearAllMocks(); api = fixture(); mocks.create.mockResolvedValue(api); });
 it("deriva organização e papel da associação validada", async () => {
-  expect(await loadCentralContext()).toMatchObject({ status: "ready", role: "owner", organization: { id: organizationId } });
+  expect(await loadCentralContext()).toMatchObject({ status: "ready", role: "owner", email: "owner@example.test", organization: { id: organizationId } });
   expect(api.auth.getUser).toHaveBeenCalledOnce(); expect(api.organization.eq).toHaveBeenCalledWith("id", organizationId);
 });
 it.each([null, { id: crypto.randomUUID(), is_anonymous: true }])("anônimo não consulta dados", async (user) => {
