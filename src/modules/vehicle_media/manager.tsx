@@ -12,6 +12,7 @@ export function VehicleMediaManager({ vehicleId, images }: { vehicleId: string; 
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState<{ kind: "success" | "error"; text: string } | null>(null);
   const [file, setFile] = useState<File | null>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
   const operation = useRef<string | null>(null);
   const ready = images.filter((image) => image.status === "ready");
   async function run(action: () => Promise<MediaActionResult>) {
@@ -31,7 +32,7 @@ export function VehicleMediaManager({ vehicleId, images }: { vehicleId: string; 
       catch { /* A response can be lost after Storage accepted the object. */ }
     }
     const result = await finalizeVehicleMedia(vehicleId, prepared.imageId);
-    if (result.status === "success") { operation.current = null; setFile(null); }
+    if (result.status === "success") { operation.current = null; setFile(null); if (inputRef.current) inputRef.current.value = ""; }
     return result;
   }
   function move(id: string, first: boolean) {
@@ -42,7 +43,7 @@ export function VehicleMediaManager({ vehicleId, images }: { vehicleId: string; 
   return <section className="vehicle-media-panel" aria-label="Fotos do veículo">
     <header className="vehicle-media-heading"><div><p className="eyebrow">Galeria do veículo</p><h2>Fotos</h2><p>Até 8 fotos JPEG, PNG ou WebP de até 5 MB. A primeira foto é a capa.</p></div><span className="status-badge">{ready.length}/8 prontas</span></header>
     <div className="vehicle-media-upload">
-      <div className="vehicle-media-file"><label htmlFor="vehicle-photo">Adicionar foto</label><input id="vehicle-photo" type="file" accept="image/jpeg,image/png,image/webp" disabled={busy} onChange={(event) => { setFile(event.target.files?.[0] ?? null); operation.current = null; }} /><span className="caption" aria-live="polite">{file ? file.name : "Nenhum arquivo escolhido"}</span></div>
+      <div className="vehicle-media-file"><label htmlFor="vehicle-photo">Adicionar foto</label><input ref={inputRef} id="vehicle-photo" type="file" accept="image/jpeg,image/png,image/webp" disabled={busy} onChange={(event) => { setFile(event.target.files?.[0] ?? null); operation.current = null; }} /></div>
       <button type="button" className="button primary" disabled={busy || !file} onClick={() => void run(upload)}>{busy ? "Processando…" : "Enviar foto"}</button>
     </div>
     {busy ? <p className="vehicle-media-message is-processing" role="status">Processando foto…</p> : message && <p className={`vehicle-media-message is-${message.kind}`} role={message.kind === "error" ? "alert" : "status"}>{message.text}</p>}

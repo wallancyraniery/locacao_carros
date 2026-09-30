@@ -10,14 +10,16 @@ afterEach(()=>{cleanup();vi.unstubAllGlobals();});
 it('envia binário diretamente ao Storage e finaliza somente depois',async()=>{
   render(<VehicleMediaManager vehicleId={vehicle} images={[]} />);
   const file=new File(['synthetic'],'car.png',{type:'image/png'});
-  fireEvent.change(screen.getByLabelText('Adicionar foto'),{target:{files:[file]}});
-  expect(screen.getByText('car.png')).toBeInTheDocument();
+  const input=screen.getByLabelText('Adicionar foto') as HTMLInputElement;
+  fireEvent.change(input,{target:{files:[file]}});
+  expect(screen.queryByText('car.png')).not.toBeInTheDocument();
   fireEvent.click(screen.getByRole('button',{name:'Enviar foto'}));
   await waitFor(()=>expect(mock.finalize).toHaveBeenCalledWith(vehicle,'photo'));
   expect(mock.prepare).toHaveBeenCalledWith(vehicle,expect.any(String),{mimeType:'image/png',byteSize:file.size});
   expect(mock.fetch).toHaveBeenCalledWith(expect.stringContaining('synthetic.supabase.co/storage/'),expect.objectContaining({method:'PUT',body:expect.any(FormData),headers:expect.objectContaining({'x-upsert':'false'})}));
   expect(mock.fetch.mock.invocationCallOrder[0]).toBeLessThan(mock.finalize.mock.invocationCallOrder[0]);
   await screen.findByText('Fotos atualizadas.');
+  expect(input).toHaveValue('');
 });
 it('organiza estados operacionais e mantém ações acessíveis',()=>{
   render(<VehicleMediaManager vehicleId={vehicle} images={[{id:'prepared',status:'prepared',position:null,url:null},{id:'deleting',status:'deleting',position:null,url:null}]} />);
