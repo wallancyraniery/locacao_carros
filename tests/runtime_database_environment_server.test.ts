@@ -29,16 +29,16 @@ it("Preview falha fechado quando o runtime é inválido ou contém DATABASE_URL 
   vi.stubEnv("NODE_ENV", "production"); vi.stubEnv("VERCEL_ENV", "preview");
   for (const [key, value] of Object.entries(runtime)) vi.stubEnv(key, value);
   vi.stubEnv("SUPABASE_RUNTIME_DATABASE_URL", runtime.SUPABASE_RUNTIME_DATABASE_URL.replace(":6543/", ":5432/"));
-  let module = await load(); expect(() => module.getRuntimeDatabaseEnvironment()).toThrow();
+  let runtimeModule = await load(); expect(() => runtimeModule.getRuntimeDatabaseEnvironment()).toThrow();
   vi.resetModules(); vi.stubEnv("SUPABASE_RUNTIME_DATABASE_URL", runtime.SUPABASE_RUNTIME_DATABASE_URL); vi.stubEnv("DATABASE_URL", "postgresql://postgres:admin@localhost:5432/postgres");
-  module = await load(); expect(() => module.getRuntimeDatabaseEnvironment()).toThrow();
+  runtimeModule = await load(); expect(() => runtimeModule.getRuntimeDatabaseEnvironment()).toThrow();
 });
 
 it("Production continua delegando ao contrato completo e local preserva o contrato local", async () => {
   vi.stubEnv("NODE_ENV", "production"); vi.stubEnv("VERCEL_ENV", "production");
   const expected = { provider: "supabase" as const, projectRef, databaseUrl: runtime.SUPABASE_RUNTIME_DATABASE_URL, sslCa: pem };
   getProductionEnvironment.mockReturnValue({ runtimeDatabase: expected });
-  let module = await load(); expect(module.getRuntimeDatabaseEnvironment()).toBe(expected); expect(getProductionEnvironment).toHaveBeenCalledOnce();
+  let runtimeModule = await load(); expect(runtimeModule.getRuntimeDatabaseEnvironment()).toBe(expected); expect(getProductionEnvironment).toHaveBeenCalledOnce();
   vi.resetModules(); vi.clearAllMocks(); vi.stubEnv("NODE_ENV", "development"); vi.stubEnv("VERCEL_ENV", ""); vi.stubEnv("DATABASE_RUNTIME_PROVIDER", "local"); vi.stubEnv("DATABASE_URL", "postgresql://postgres:local@127.0.0.1:5432/locacao_carros");
-  module = await load(); expect(module.getRuntimeDatabaseEnvironment()).toMatchObject({ provider: "local" }); expect(getProductionEnvironment).not.toHaveBeenCalled();
+  runtimeModule = await load(); expect(runtimeModule.getRuntimeDatabaseEnvironment()).toMatchObject({ provider: "local" }); expect(getProductionEnvironment).not.toHaveBeenCalled();
 });
