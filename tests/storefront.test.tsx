@@ -3,17 +3,18 @@ import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { loadStorefront } from "@/modules/storefront/queries.server";
 import Page from "@/app/locadoras/[slug]/page";
 import { HomePage } from "@/modules/marketing/components/home_page";
-const mocks = vi.hoisted(() => ({ rpc: vi.fn() }));
+const mocks = vi.hoisted(() => ({ rpc: vi.fn(), sign: vi.fn() }));
 vi.mock("server-only", () => ({}));
+vi.mock("@/modules/vehicle_media/queries.server", () => ({ signPublicMedia: mocks.sign }));
 vi.mock("@/modules/storefront/client.server", () => ({ createStorefrontClient: () => ({ rpc: mocks.rpc }) }));
 vi.mock("next/navigation", () => ({ notFound: () => { throw new Error("NOT_FOUND"); } }));
-const data = { slug: "locadora-a", name: "Locadora A", city: "Cidade A", vehicles: [{ brand: "Marca", model: "Modelo", version: "Versão", year: 2024, color: "Prata", weekly_price_cents: 70050 }], hasNext: false };
+const data = { slug: "locadora-a", name: "Locadora A", city: "Cidade A", vehicles: [{ id: "20000000-0000-4000-8000-000000000011", images: [], brand: "Marca", model: "Modelo", version: "Versão", year: 2024, color: "Prata", weekly_price_cents: 70050 }], hasNext: false };
 const page = (slug = data.slug, query = {}) => Page({ params: Promise.resolve({ slug }), searchParams: Promise.resolve(query) });
-beforeEach(() => { vi.clearAllMocks(); mocks.rpc.mockResolvedValue({ data, error: null }); });
+beforeEach(() => { vi.clearAllMocks(); mocks.sign.mockResolvedValue({ status: "ready", images: [] }); mocks.rpc.mockResolvedValue({ data, error: null }); });
 afterEach(cleanup);
 it("consulta somente slug e página e valida projeção pública", async () => {
   expect(await loadStorefront(data.slug)).toEqual({ status: "ready", storefront: data });
-  expect(mocks.rpc).toHaveBeenCalledWith("lookup_tenant_storefront", { p_slug: data.slug, p_page: 1 });
+  expect(mocks.rpc).toHaveBeenCalledWith("lookup_tenant_storefront_media", { p_slug: data.slug, p_page: 1 });
 });
 it.each(["../admin", "x", "UPPER", "a?organization_id=other"])("slug inválido %s não consulta banco", async (slug) => {
   expect(await loadStorefront(slug)).toEqual({ status: "missing" }); expect(mocks.rpc).not.toHaveBeenCalled();

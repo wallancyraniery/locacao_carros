@@ -50,3 +50,5 @@ O onboarding é coberto por `tenant_onboarding.test.ts`, `tenant_onboarding_rend
 O checkpoint [Central/frota](tenant_dashboard_fleet.md) acrescenta central_access, fleet, fleet_rendering e postgresql/fleet.integration: autorização, RLS, validação, grants mínimos, idempotência e UI. Aplique também 0012 somente no banco local _test antes da integração.
 
 A vitrine por slug é coberta por storefront, storefront_client, storefront_publication e postgresql/storefront.integration: projeção pública, draft/published/despublicação, owner/member, isolamento, filtros de exposição, permissões e estados de renderização. Aplique 0013 somente no banco local _test para integração.
+
+A [mídia da frota](tenant_vehicle_media.md) acrescenta testes de actions, interação, decoder sharp e PostgreSQL: concorrência, owner/member, isolamento A/B, ordem/capa, tombstones e policies de Storage em tabela sintética transacional local. Aplicar 0014 e 0015 somente no banco exclusivo `_test`. Isso não comprova o serviço Storage real.

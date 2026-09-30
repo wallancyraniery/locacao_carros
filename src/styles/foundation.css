@@ -265,3 +265,28 @@ fieldset { min-width: 0; } .form-grid > * { min-width: 0; }
   *, *::before, *::after { animation: none !important; transition: none !important; }
   .journey-card:hover, .journey-card:focus-visible { transform: none; }
 }
+
+/* Tenant vehicle media: signed images are rendered unoptimized so expiring URLs are not cached by the Next image optimizer. */
+.storefront-vehicle-media { aspect-ratio: 4 / 3; overflow: hidden; border-bottom: 1px solid var(--border); background: var(--surface-soft); }
+.storefront-vehicle-photo { display: block; width: 100%; height: 100%; object-fit: cover; }
+.storefront-card .card-actions { margin-top: 1rem; }
+.storefront-detail-grid { display: grid; grid-template-columns: minmax(0, 1.35fr) minmax(280px, .65fr); gap: 1.5rem; align-items: start; }
+.storefront-gallery { display: grid; gap: 1rem; min-width: 0; }
+.storefront-gallery figure { margin: 0; overflow: hidden; border: 1px solid var(--border); border-radius: var(--radius-md); background: var(--surface-soft); box-shadow: var(--shadow-card); }
+.storefront-gallery-photo { display: block; width: 100%; height: auto; max-height: 720px; object-fit: contain; background: var(--surface-soft); }
+.storefront-detail-summary { position: sticky; top: 1rem; padding: 1.5rem; border: 1px solid var(--border); border-radius: var(--radius-md); background: var(--surface-raised); box-shadow: var(--shadow-card); }
+.storefront-detail-summary .vehicle-details { margin-block: 1.25rem; }
+.storefront-detail-summary .price { margin-bottom: 1.25rem; }
+@media (max-width: 800px) {
+  .storefront-detail-grid { grid-template-columns: minmax(0, 1fr); }
+  .storefront-detail-summary { position: static; }
+}
+
+.vehicle-media-panel { display: grid; gap: 1.25rem; max-width: 980px; margin-top: 1.5rem; }
+.vehicle-media-heading, .vehicle-media-upload, .vehicle-media-card { border: 1px solid var(--border); border-radius: var(--radius-md); background: var(--surface-raised); box-shadow: var(--shadow-card); }
+.vehicle-media-heading { display: flex; align-items: start; justify-content: space-between; gap: 1rem; padding: clamp(1.25rem, 3vw, 1.75rem); }
+.vehicle-media-heading h2 { margin-bottom: .6rem; font-size: clamp(1.35rem, 2vw, 1.65rem); }.vehicle-media-heading p:not(.eyebrow) { max-width: 62ch; color: var(--muted); }
+.vehicle-media-upload { display: flex; align-items: end; justify-content: space-between; gap: 1rem; padding: 1.25rem; }.vehicle-media-file { display: grid; gap: .55rem; min-width: 0; }.vehicle-media-file label { font-size: var(--type-label); font-weight: 650; }.vehicle-media-file input { max-width: 100%; min-height: 44px; }.vehicle-media-file input::file-selector-button { margin-right: .75rem; padding: .55rem .8rem; border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--surface-soft); color: var(--text); font: inherit; font-weight: 650; cursor: pointer; }.vehicle-media-file input:disabled::file-selector-button { cursor: not-allowed; }
+.vehicle-media-message { margin: 0; padding: .9rem 1rem; border-radius: var(--radius-sm); border: 1px solid var(--border); }.vehicle-media-message.is-success { background: #e0f3ed; border-color: #a9dccd; color: #096449; }.vehicle-media-message.is-processing { background: #edf7fa; border-color: #b7dce4; color: #15536a; }.vehicle-media-message.is-error { background: #fff4f4; border-color: #e4bcbc; color: #852e2e; }
+.vehicle-media-manager { display: grid; gap: 1rem; padding: 0; margin: 0; list-style: none; }.vehicle-media-card { display: grid; grid-template-columns: minmax(132px, 220px) minmax(0, 1fr); overflow: hidden; }.vehicle-media-thumb { display: grid; place-items: center; min-height: 132px; background: var(--surface-soft); color: var(--muted); font-size: var(--type-caption); }.vehicle-media-thumb img { width: 100%; height: 100%; object-fit: cover; }.vehicle-media-details { display: grid; align-content: start; gap: .75rem; padding: 1rem 1.15rem; }.vehicle-media-details > p { margin: 0; }.vehicle-media-actions { display: flex; flex-wrap: wrap; gap: .65rem; }.vehicle-media-actions .button { min-height: 40px; }.vehicle-media-delete { border-color: #c68282; color: #852e2e; background: #fffafa; }.vehicle-media-delete:hover:not(:disabled) { background: #fee8e8; border-color: #a95353; }.vehicle-media-panel button:not(:disabled) { cursor: pointer; }.vehicle-media-panel button:disabled { opacity: .55; cursor: not-allowed; }.vehicle-media-card.is-deleting { border-color: #d7b77d; }.vehicle-media-card.is-prepared { border-style: dashed; }
+@media (max-width: 640px) { .vehicle-media-heading, .vehicle-media-upload { align-items: stretch; flex-direction: column; }.vehicle-media-upload .button { width: 100%; }.vehicle-media-card { grid-template-columns: minmax(0, 1fr); }.vehicle-media-thumb { min-height: 180px; }.vehicle-media-actions .button { flex: 1 1 100%; } }

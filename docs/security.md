@@ -36,3 +36,5 @@ A migration 0011 implementa o [onboarding](tenant_onboarding.md) com identidade 
 A fronteira privada de [cadastro de frota 0012](tenant_dashboard_fleet.md) valida owner e organização da sessão, recusa Auth anônimo e fixa is_demo=false. Acrescenta apenas SELECT por coluna em veículos e EXECUTE estreito, sem escrita direta ou mudança no acesso às reservas.
 
 A [página pública por slug](public_tenant_storefront.md) apresenta a projeção mínima da locadora e sua frota elegível pela fronteira de leitura 0013, somente após publicação explícita pelo owner. A 0013 usa default draft e uma fronteira de escrita estreita que deriva a organização do membership, sem UPDATE direto ou ampliação de RLS. Não habilita reservas de tenants reais.
+
+A [mídia da frota](tenant_vehicle_media.md) mantém metadata com RLS sem acesso direto pelas roles da aplicação. Funções privadas autorizam owner, serializam pelo veículo e limitam oito slots. A runtime confirma apenas depois da validação real; policies de Storage impedem substituição e retiram a mídia da projeção antes da exclusão física. A ativação remota e os limites de URLs assinadas estão documentados no checkpoint.

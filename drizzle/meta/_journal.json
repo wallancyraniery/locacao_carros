@@ -99,6 +99,13 @@
       "when": 1790181721852,
       "tag": "0013_public_tenant_storefront",
       "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "7",
+      "when": 1790374629530,
+      "tag": "0014_tenant_vehicle_media",
+      "breakpoints": true
     }
   ]
 }

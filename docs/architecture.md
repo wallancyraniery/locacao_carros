@@ -60,3 +60,5 @@ A [Central da locadora e frota](tenant_dashboard_fleet.md) acrescenta navegaçã
 A [página pública por slug](public_tenant_storefront.md) apresenta a projeção mínima da locadora e sua frota elegível pela fronteira de leitura 0013, sem expor tabelas ou habilitar reservas de tenants reais.
 
 A [fundação visual Improve](ui_foundation.md) documenta tokens, tipografia local e componentes de apresentação compartilhados, preservando as fronteiras funcionais existentes.
+
+O [checkpoint de mídia da frota](tenant_vehicle_media.md) conecta gestão owner → capacidade de upload emitida no servidor → upload direto ao Storage privado → decodificação server-side → confirmação runtime restrita → capa/galeria públicas. A migration 0014 preserva o histórico anterior e o isolamento por organização.

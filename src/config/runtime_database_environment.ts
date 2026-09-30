@@ -90,6 +90,8 @@ export function parseRuntimeDatabaseEnvironment(
     return { provider: "local", databaseUrl: url.href };
   }
 
+  if (environment.DATABASE_URL?.trim()) fail("DATABASE_URL não é aceita no runtime Supabase");
+
   const requiredFields = [
     "SUPABASE_RUNTIME_PROJECT_REF",
     "SUPABASE_RUNTIME_DATABASE_URL",

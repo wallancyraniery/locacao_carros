@@ -1,3 +1,5 @@
+import Image from "next/image";
+import Link from "next/link";
 import { ImproveBrand } from "@/modules/ui/brand";
 import { Icon } from "@/modules/ui/icon";
 import { EmptyState, VehiclePlaceholder } from "@/modules/ui/empty_state";
@@ -26,14 +28,27 @@ export default async function StorefrontPage({ params, searchParams }: {
       <header className="storefront-heading"><p className="eyebrow">Conheça nossa frota</p><h1>{org.name}</h1><p className="storefront-city"><Icon name="pin" />{org.city || "Cidade não informada"}</p></header>
       <div className="storefront-section-heading"><h2>Veículos</h2><span className="caption">Valores por semana</span></div>
       <p className="storefront-notice">Valores semanais informados pela locadora. A exposição do veículo não confirma disponibilidade para um período. Solicitações por esta página ainda não estão disponíveis.</p>
-      {org.vehicles.length === 0 ? <EmptyState>Nenhum veículo para exibir nesta página.</EmptyState> : <div className="vehicle-grid storefront-grid">{org.vehicles.map((vehicle, index) => <article className="vehicle-card storefront-card" key={index}>
-        <VehiclePlaceholder />
-        <div className="card-content"><div className="storefront-card-heading"><h3>{vehicle.brand} {vehicle.model}</h3>
-          {vehicle.version && <p>{vehicle.version}</p>}</div>
-          <dl className="vehicle-details"><div><dt>Ano</dt><dd>{vehicle.year}</dd></div><div><dt>Cor</dt><dd>{vehicle.color}</dd></div></dl>
-          <p className="price"><strong>{formatRentalMoney(vehicle.weekly_price_cents)}</strong> <span>/ semana</span></p>
-        </div>
-      </article>)}</div>}
+      {org.vehicles.length === 0 ? <EmptyState>Nenhum veículo para exibir nesta página.</EmptyState> : <div className="vehicle-grid storefront-grid">{org.vehicles.map((vehicle) => {
+        const cover = vehicle.images[0];
+        return <article className="vehicle-card storefront-card" key={vehicle.id}>
+          {cover ? <div className="storefront-vehicle-media">
+            <Image
+              src={cover.url}
+              alt={`${vehicle.brand} ${vehicle.model}`}
+              width={cover.width}
+              height={cover.height}
+              unoptimized
+              className="storefront-vehicle-photo"
+            />
+          </div> : <VehiclePlaceholder />}
+          <div className="card-content"><div className="storefront-card-heading"><h3>{vehicle.brand} {vehicle.model}</h3>
+            {vehicle.version && <p>{vehicle.version}</p>}</div>
+            <dl className="vehicle-details"><div><dt>Ano</dt><dd>{vehicle.year}</dd></div><div><dt>Cor</dt><dd>{vehicle.color}</dd></div></dl>
+            <p className="price"><strong>{formatRentalMoney(vehicle.weekly_price_cents)}</strong> <span>/ semana</span></p>
+            <div className="card-actions"><Link className="button secondary" href={`/locadoras/${org.slug}/veiculos/${vehicle.id}`}>Ver detalhes e fotos</Link></div>
+          </div>
+        </article>;
+      })}</div>}
       <nav className="storefront-pagination" aria-label="Páginas de veículos">
         {page > 1 && <a href={`/locadoras/${org.slug}?page=${page - 1}`}>Anterior</a>}
         {org.hasNext && page < 10000 && <a href={`/locadoras/${org.slug}?page=${page + 1}`}>Próxima</a>}
