@@ -31,7 +31,7 @@ it("erro de contagem não inventa métricas", async () => {
 it("lista veículos sem fotos demonstrativas e pagina", async () => {
   mocks.fleet.mockResolvedValue({ status: "ready", hasNext: true, vehicles: [{ id: "opaque", brand: "Marca", model: "Modelo", year: 2024, color: "Prata", weekly_price_cents: 70050, operational_status: "active" }] });
   render(await Vehicles({ searchParams: Promise.resolve({ page: "2" }) }));
-  expect(screen.getByText("Marca Modelo")).toBeVisible(); expect(screen.getByText("Sem foto")).toBeVisible();
+  expect(screen.getByText("Marca Modelo")).toBeVisible(); expect(screen.getByRole("link", { name: "Gerenciar fotos" })).toHaveAttribute("href", "/admin/veiculos/opaque/fotos");
   expect(screen.queryByRole("img")).toBeNull(); expect(screen.getByRole("link", { name: "Próxima" })).toHaveAttribute("href", "/admin/veiculos?page=3");
 });
 it("member pode ler mas não recebe formulário de cadastro", async () => {

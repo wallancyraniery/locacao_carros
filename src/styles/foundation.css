@@ -265,3 +265,24 @@ fieldset { min-width: 0; } .form-grid > * { min-width: 0; }
   *, *::before, *::after { animation: none !important; transition: none !important; }
   .journey-card:hover, .journey-card:focus-visible { transform: none; }
 }
+
+/* Tenant vehicle media: signed images are rendered unoptimized so expiring URLs are not cached by the Next image optimizer. */
+.storefront-vehicle-media { aspect-ratio: 4 / 3; overflow: hidden; border-bottom: 1px solid var(--border); background: var(--surface-soft); }
+.storefront-vehicle-photo { display: block; width: 100%; height: 100%; object-fit: cover; }
+.storefront-card .card-actions { margin-top: 1rem; }
+.storefront-detail-grid { display: grid; grid-template-columns: minmax(0, 1.35fr) minmax(280px, .65fr); gap: 1.5rem; align-items: start; }
+.storefront-gallery { display: grid; gap: 1rem; min-width: 0; }
+.storefront-gallery figure { margin: 0; overflow: hidden; border: 1px solid var(--border); border-radius: var(--radius-md); background: var(--surface-soft); box-shadow: var(--shadow-card); }
+.storefront-gallery-photo { display: block; width: 100%; height: auto; max-height: 720px; object-fit: contain; background: var(--surface-soft); }
+.storefront-detail-summary { position: sticky; top: 1rem; padding: 1.5rem; border: 1px solid var(--border); border-radius: var(--radius-md); background: var(--surface-raised); box-shadow: var(--shadow-card); }
+.storefront-detail-summary .vehicle-details { margin-block: 1.25rem; }
+.storefront-detail-summary .price { margin-bottom: 1.25rem; }
+@media (max-width: 800px) {
+  .storefront-detail-grid { grid-template-columns: minmax(0, 1fr); }
+  .storefront-detail-summary { position: static; }
+}
+
+.vehicle-media-manager { display: flex; flex-wrap: wrap; gap: 1rem; padding-left: 1.5rem; }
+.vehicle-media-manager li { max-width: 100%; }
+.vehicle-media-manager img { max-width: 100%; object-fit: contain; }
+.vehicle-media-manager button { display: block; margin-block: .5rem; }
