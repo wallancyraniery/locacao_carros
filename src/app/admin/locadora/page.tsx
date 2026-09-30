@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { PublicationForm } from "@/modules/storefront/publication_form";
 import { storefrontSlug } from "@/modules/storefront/contracts";
 import { requireCentralContext } from "@/modules/central/access.server";
@@ -16,7 +17,7 @@ export default async function OrganizationPage() {
     <p className={`status-badge ${org.storefront_status === "published" ? "is-positive" : ""}`}>{org.storefront_status === "published" ? "Publicada" : "Não publicada"}</p></div>
     <p>Ao publicar, o nome, a cidade e os veículos elegíveis da locadora ficam visíveis para quem acessar seu link. Despublicar impede novas consultas à vitrine.</p>
     {context.role === "owner" ? <PublicationForm status={org.storefront_status} /> : <p>Somente a conta proprietária pode publicar ou despublicar a vitrine.</p>}
-    {org.storefront_status === "published" && storefrontSlug.safeParse(org.slug).success && <p><a href={`/locadoras/${org.slug}`}>Ver página pública da locadora</a></p>}
+    {org.storefront_status === "published" && storefrontSlug.safeParse(org.slug).success && <p><Link className="button secondary" href={`/locadoras/${org.slug}`} target="_blank" rel="noopener noreferrer">Ver página pública da locadora</Link></p>}
     </section>
   </CentralShell>;
 }

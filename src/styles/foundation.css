@@ -85,7 +85,11 @@ a:not(.button):hover { text-decoration-thickness: 2px; }
 fieldset { min-width: 0; } .form-grid > * { min-width: 0; }
 /* Public storefront: the rental company's identity takes priority over platform branding. */
 .storefront-topbar { display: flex; justify-content: space-between; align-items: center; gap: 1rem; padding: 1rem max(1.25rem, calc((100% - 1180px)/2)); border-bottom: 1px solid var(--border); background: white; }
-.storefront-topbar > span:first-child { font-size: var(--type-caption); color: var(--muted); }
+.storefront-nav { display: flex; align-items: center; gap: .25rem; }
+.storefront-nav a, .storefront-nav [aria-current="page"] { display: inline-flex; align-items: center; min-height: 44px; padding: .55rem .75rem; border-radius: var(--radius-sm); font-size: var(--type-caption); }
+.storefront-nav a { color: var(--text); cursor: pointer; text-decoration: none; }
+.storefront-nav a:hover { background: var(--surface-soft); text-decoration: none; }
+.storefront-nav [aria-current="page"] { color: var(--muted); font-weight: 650; }
 .storefront { overflow-wrap: anywhere; }
 .storefront.section { max-width: 1260px; padding: 2rem clamp(1.25rem, 4vw, 2.5rem) 3rem; }
 .storefront-heading { padding: 1.25rem 1.5rem; border: 1px solid var(--border); border-left: 3px solid #4d9aa6; border-radius: var(--radius-md); margin-bottom: 1.75rem; background: var(--surface-raised); }
@@ -226,8 +230,9 @@ fieldset { min-width: 0; } .form-grid > * { min-width: 0; }
   .central-details { grid-template-columns: minmax(0,1fr); gap: 1rem; }
   .central-metrics > div { padding: 1.1rem; } .central-metrics dt { font-size: .8rem; }
   .storefront-grid, .journey-grid { grid-template-columns: minmax(0,1fr); }
-  .storefront-topbar { padding: .85rem 1.25rem; } .storefront-topbar > span:first-child { display: none; }
-  .storefront-topbar { justify-content: flex-end; }
+  .storefront-topbar { padding: .85rem 1.25rem; }
+  .storefront-nav { gap: .1rem; }
+  .storefront-nav a, .storefront-nav [aria-current="page"] { padding-inline: .55rem; }
   .storefront { overflow-wrap: anywhere; }
   .storefront.section { padding-top: 1.5rem; }
   .storefront-section-heading { align-items: start; flex-direction: column; gap: .3rem; }

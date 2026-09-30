@@ -32,6 +32,8 @@ it("renderiza frota real sem imagem, login ou condições inventadas", async () 
   expect(screen.getByText(/700,50/)).toBeVisible(); expect(screen.queryByRole("img")).toBeNull();
   expect(screen.queryByRole("button")).toBeNull(); expect(screen.queryByText(/caução|entrada|documentação/i)).toBeNull();
   expect(screen.getByText(/Solicitações por esta página ainda não estão disponíveis/)).toBeVisible();
+  expect(screen.getByRole("link", { name: "Início" })).toHaveAttribute("href", "/");
+  expect(screen.getByText("Frota")).toHaveAttribute("aria-current", "page");
   expect(screen.queryByRole("link", { name: /interesse|solicitar|reservar/i })).toBeNull();
 });
 it("organização sem frota continua válida e não recebe veículos demo", async () => {

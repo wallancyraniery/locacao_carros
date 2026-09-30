@@ -2,6 +2,7 @@ import { cleanup, render, screen } from "@testing-library/react";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { loadStorefront, loadStorefrontVehicle } from "@/modules/storefront/queries.server";
 import Page from "@/app/locadoras/[slug]/page";
+import VehiclePage from "@/app/locadoras/[slug]/veiculos/[vehicleId]/page";
 
 const mocks = vi.hoisted(() => ({ rpc: vi.fn(), sign: vi.fn() }));
 vi.mock("server-only", () => ({}));
@@ -40,6 +41,13 @@ it("detalhe resolve slug e veículo juntos e entrega galeria na ordem da projeç
   expect(await loadStorefrontVehicle(organization.slug, id)).toEqual({ status: "ready", storefront: { ...organization, vehicle: { ...vehicle, images: signed } } });
   expect(mocks.rpc).toHaveBeenCalledWith("lookup_tenant_storefront_vehicle", { p_slug: organization.slug, p_vehicle_id: id });
   expect(mocks.sign).toHaveBeenCalledWith(images);
+});
+it("detalhe oferece início e retorno à frota no slug correto sem CTA inexistente", async () => {
+  mocks.rpc.mockResolvedValue({ data: { ...organization, vehicle }, error: null });
+  render(await VehiclePage({ params: Promise.resolve({ slug: organization.slug, vehicleId: id }) }));
+  expect(screen.getByRole("link", { name: "Início" })).toHaveAttribute("href", "/");
+  expect(screen.getByRole("link", { name: "← Voltar à frota" })).toHaveAttribute("href", `/locadoras/${organization.slug}`);
+  expect(screen.queryByRole("link", { name: /interesse|solicitar|reservar/i })).toBeNull();
 });
 it.each(["draft", "veículo de outra locadora", "inativo", "demo", "ausente"])("detalhe %s não revela nem assina fotos", async () => {
   mocks.rpc.mockResolvedValue({ data: null, error: null });

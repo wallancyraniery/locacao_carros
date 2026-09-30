@@ -20,7 +20,7 @@ export default async function StorefrontVehiclePage({ params }: {
 
   const { vehicle, ...org } = result.storefront;
   return <>
-    <header className="storefront-topbar"><Link href={`/locadoras/${org.slug}`}>← Voltar à frota</Link><ImproveBrand subtle /></header>
+    <header className="storefront-topbar"><nav className="storefront-nav" aria-label="Navegação da vitrine"><Link href="/">Início</Link><Link className="storefront-back" href={`/locadoras/${org.slug}`}>← Voltar à frota</Link></nav><ImproveBrand subtle /></header>
     <main className="section storefront storefront-detail-page">
       <header className="storefront-heading">
         <p className="eyebrow">Veículo da frota</p>

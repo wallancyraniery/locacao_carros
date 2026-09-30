@@ -23,7 +23,7 @@ export default async function StorefrontPage({ params, searchParams }: {
   if (result.status !== "ready") return null;
   const org = result.storefront;
   return <>
-    <header className="storefront-topbar"><span>Frota da locadora</span><ImproveBrand subtle /></header>
+    <header className="storefront-topbar"><nav className="storefront-nav" aria-label="Navegação da vitrine"><Link href="/">Início</Link><span aria-current="page">Frota</span></nav><ImproveBrand subtle /></header>
     <main className="section storefront">
       <header className="storefront-heading"><p className="eyebrow">Conheça nossa frota</p><h1>{org.name}</h1><p className="storefront-city"><Icon name="pin" />{org.city || "Cidade não informada"}</p></header>
       <div className="storefront-section-heading"><h2>Veículos</h2><span className="caption">Valores por semana</span></div>
