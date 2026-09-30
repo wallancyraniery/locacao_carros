@@ -19,6 +19,7 @@ afterEach(() => { vi.unstubAllEnvs(); vi.resetModules(); vi.clearAllMocks(); });
 
 it("Preview usa somente o contrato estrito de runtime e não exige Turnstile ou privacidade", async () => {
   vi.stubEnv("NODE_ENV", "production"); vi.stubEnv("VERCEL_ENV", "preview");
+  vi.stubEnv("DATABASE_URL", undefined);
   for (const [key, value] of Object.entries(runtime)) vi.stubEnv(key, value);
   const { getRuntimeDatabaseEnvironment } = await load();
   expect(getRuntimeDatabaseEnvironment()).toMatchObject({ provider: "supabase", projectRef });
