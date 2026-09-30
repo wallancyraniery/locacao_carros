@@ -6,7 +6,9 @@ import { parseRuntimeDatabaseEnvironment } from "./runtime_database_environment"
 let cachedEnvironment: ReturnType<typeof parseRuntimeDatabaseEnvironment> | undefined;
 
 export function getRuntimeDatabaseEnvironment() {
-  cachedEnvironment ??= process.env.NODE_ENV === "production"
+  cachedEnvironment ??= process.env.VERCEL_ENV === "preview"
+    ? parseRuntimeDatabaseEnvironment(process.env)
+    : process.env.NODE_ENV === "production"
     ? getProductionEnvironment().runtimeDatabase
     : parseRuntimeDatabaseEnvironment(process.env);
   return cachedEnvironment;
