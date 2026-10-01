@@ -39,7 +39,7 @@ it("member pode ler mas não recebe formulário de cadastro", async () => {
   expect(screen.getByRole("alert")).toHaveTextContent("Somente a conta proprietária"); expect(screen.queryByRole("button", { name: "Cadastrar veículo" })).toBeNull();
 });
 it("minha locadora apresenta link para a vitrine pelo próprio slug", async () => {
-  render(await Organization()); expect(screen.getByText("locadora-a")).toBeVisible(); const preview = screen.getByRole("link", { name: "Ver página pública da locadora" }); expect(preview).toHaveAttribute("href", "/locadoras/locadora-a"); expect(preview).toHaveClass("button", "secondary"); expect(preview).toHaveAttribute("target", "_blank"); expect(preview).toHaveAttribute("rel", "noopener noreferrer");
+  render(await Organization()); expect(screen.getByText("locadora-a")).toBeVisible(); const preview = screen.getByRole("link", { name: "Ver página pública da locadora" }); expect(preview).toHaveAttribute("href", "/locadoras/locadora-a?preview=central"); expect(preview).toHaveClass("button", "secondary"); expect(preview).toHaveAttribute("target", "_blank"); expect(preview).toHaveAttribute("rel", "noopener noreferrer");
   expect(screen.queryByRole("link", { name: "locadora-a" })).toBeNull();
 });
 it("reservas explica limites sem fingir listagem, calendário ou ausência de registros", async () => {

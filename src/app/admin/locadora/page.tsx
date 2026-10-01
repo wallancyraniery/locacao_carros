@@ -16,8 +16,8 @@ export default async function OrganizationPage() {
     <section className="ui-panel publication-panel"><div className="panel-heading"><h2>Vitrine pública</h2>
     <p className={`status-badge ${org.storefront_status === "published" ? "is-positive" : ""}`}>{org.storefront_status === "published" ? "Publicada" : "Não publicada"}</p></div>
     <p>Ao publicar, o nome, a cidade e os veículos elegíveis da locadora ficam visíveis para quem acessar seu link. Despublicar impede novas consultas à vitrine.</p>
-    {context.role === "owner" ? <PublicationForm status={org.storefront_status} /> : <p>Somente a conta proprietária pode publicar ou despublicar a vitrine.</p>}
-    {org.storefront_status === "published" && storefrontSlug.safeParse(org.slug).success && <p><Link className="button secondary" href={`/locadoras/${org.slug}`} target="_blank" rel="noopener noreferrer">Ver página pública da locadora</Link></p>}
+    <div className="publication-actions">{context.role === "owner" ? <PublicationForm status={org.storefront_status} /> : <p>Somente a conta proprietária pode publicar ou despublicar a vitrine.</p>}
+    {org.storefront_status === "published" && storefrontSlug.safeParse(org.slug).success && <Link className="button secondary" href={`/locadoras/${org.slug}?preview=central`} target="_blank" rel="noopener noreferrer">Ver página pública da locadora</Link>}</div>
     </section>
   </CentralShell>;
 }

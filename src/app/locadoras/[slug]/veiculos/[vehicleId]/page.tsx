@@ -5,22 +5,30 @@ import { ImproveBrand } from "@/modules/ui/brand";
 import { VehiclePlaceholder } from "@/modules/ui/empty_state";
 import { formatRentalMoney } from "@/modules/rentals/domain/rental_terms";
 import { loadStorefrontVehicle } from "@/modules/storefront/queries.server";
+import { loadCentralContext } from "@/modules/central/access.server";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Veículo | Improve", description: "Conheça o veículo apresentado pela locadora." };
 
-export default async function StorefrontVehiclePage({ params }: {
+export default async function StorefrontVehiclePage({ params, searchParams }: {
   params: Promise<{ slug: string; vehicleId: string }>;
+  searchParams: Promise<{ preview?: string | string[] }>;
 }) {
   const { slug, vehicleId } = await params;
+  const query = await searchParams;
   const result = await loadStorefrontVehicle(slug, vehicleId);
   if (result.status === "missing") notFound();
   if (result.status === "error") return <main className="section"><h1>Consulta do veículo</h1><p role="alert">Não foi possível consultar este veículo agora. Tente novamente em instantes.</p></main>;
   if (result.status !== "ready") return null;
 
   const { vehicle, ...org } = result.storefront;
+  const previewRequested = query.preview === "central";
+  const context = previewRequested ? await loadCentralContext() : null;
+  const centralPreview = context?.status === "ready" && context.organization.slug === org.slug;
+  const previewSuffix = centralPreview ? "?preview=central" : "";
   return <>
-    <header className="storefront-topbar"><nav className="storefront-nav" aria-label="Navegação da vitrine"><Link href="/">Início</Link><Link className="storefront-back" href={`/locadoras/${org.slug}`}>← Voltar à frota</Link></nav><ImproveBrand subtle /></header>
+    <header className="storefront-topbar"><Link className="storefront-nav storefront-back" href={`/locadoras/${org.slug}${previewSuffix}`}>← Voltar à frota</Link><ImproveBrand subtle /></header>
+    {centralPreview && <nav className="storefront-preview" aria-label="Pré-visualização da Central"><span>Pré-visualização da sua vitrine</span><div><Link href="/admin">Visão geral</Link><Link href="/admin/veiculos">Veículos</Link><Link href="/admin/reservas">Reservas</Link><Link href="/admin/interessados">Interessados</Link><Link href="/admin/locadora">Minha locadora</Link></div></nav>}
     <main className="section storefront storefront-detail-page">
       <header className="storefront-heading">
         <p className="eyebrow">Veículo da frota</p>

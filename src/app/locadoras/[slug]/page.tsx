@@ -5,6 +5,7 @@ import { Icon } from "@/modules/ui/icon";
 import { EmptyState, VehiclePlaceholder } from "@/modules/ui/empty_state";
 import { notFound } from "next/navigation";
 import { loadStorefront } from "@/modules/storefront/queries.server";
+import { loadCentralContext } from "@/modules/central/access.server";
 import { formatRentalMoney } from "@/modules/rentals/domain/rental_terms";
 
 export const dynamic = "force-dynamic";
@@ -12,7 +13,7 @@ export const metadata = { title: "Locadora | Improve", description: "Conheça a 
 
 export default async function StorefrontPage({ params, searchParams }: {
   params: Promise<{ slug: string }>;
-  searchParams: Promise<{ page?: string | string[] }>;
+  searchParams: Promise<{ page?: string | string[]; preview?: string | string[] }>;
 }) {
   const { slug } = await params;
   const query = await searchParams;
@@ -22,8 +23,13 @@ export default async function StorefrontPage({ params, searchParams }: {
   if (result.status === "error") return <main className="section"><h1>Consulta da locadora</h1><p role="alert">Não foi possível consultar esta página agora. Tente novamente em instantes.</p></main>;
   if (result.status !== "ready") return null;
   const org = result.storefront;
+  const previewRequested = query.preview === "central";
+  const context = previewRequested ? await loadCentralContext() : null;
+  const centralPreview = context?.status === "ready" && context.organization.slug === org.slug;
+  const previewSuffix = centralPreview ? "?preview=central" : "";
   return <>
-    <header className="storefront-topbar"><nav className="storefront-nav" aria-label="Navegação da vitrine"><Link href="/">Início</Link><span aria-current="page">Frota</span></nav><ImproveBrand subtle /></header>
+    <header className="storefront-topbar"><span className="storefront-nav" aria-current="page">Frota</span><ImproveBrand subtle /></header>
+    {centralPreview && <nav className="storefront-preview" aria-label="Pré-visualização da Central"><span>Pré-visualização da sua vitrine</span><div><Link href="/admin">Visão geral</Link><Link href="/admin/veiculos">Veículos</Link><Link href="/admin/reservas">Reservas</Link><Link href="/admin/interessados">Interessados</Link><Link href="/admin/locadora">Minha locadora</Link></div></nav>}
     <main className="section storefront">
       <header className="storefront-heading"><p className="eyebrow">Conheça nossa frota</p><h1>{org.name}</h1><p className="storefront-city"><Icon name="pin" />{org.city || "Cidade não informada"}</p></header>
       <div className="storefront-section-heading"><h2>Veículos</h2><span className="caption">Valores por semana</span></div>
@@ -45,13 +51,13 @@ export default async function StorefrontPage({ params, searchParams }: {
             {vehicle.version && <p>{vehicle.version}</p>}</div>
             <dl className="vehicle-details"><div><dt>Ano</dt><dd>{vehicle.year}</dd></div><div><dt>Cor</dt><dd>{vehicle.color}</dd></div></dl>
             <p className="price"><strong>{formatRentalMoney(vehicle.weekly_price_cents)}</strong> <span>/ semana</span></p>
-            <div className="card-actions"><Link className="button secondary" href={`/locadoras/${org.slug}/veiculos/${vehicle.id}`}>Ver detalhes e fotos</Link></div>
+            <div className="card-actions"><Link className="button secondary" href={`/locadoras/${org.slug}/veiculos/${vehicle.id}${previewSuffix}`}>Ver detalhes e fotos</Link></div>
           </div>
         </article>;
       })}</div>}
       <nav className="storefront-pagination" aria-label="Páginas de veículos">
-        {page > 1 && <a href={`/locadoras/${org.slug}?page=${page - 1}`}>Anterior</a>}
-        {org.hasNext && page < 10000 && <a href={`/locadoras/${org.slug}?page=${page + 1}`}>Próxima</a>}
+        {page > 1 && <Link href={`/locadoras/${org.slug}?page=${page - 1}${centralPreview ? "&preview=central" : ""}`}>Anterior</Link>}
+        {org.hasNext && page < 10000 && <Link href={`/locadoras/${org.slug}?page=${page + 1}${centralPreview ? "&preview=central" : ""}`}>Próxima</Link>}
       </nav>
     </main>
   </>;
