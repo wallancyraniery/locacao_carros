@@ -40,7 +40,10 @@ it("draft mostra estado e ação owner-only sem link público", async () => {
 it("published mostra link e opção de despublicar", async () => {
   mocks.context.mockResolvedValue({ ...context, organization: { ...context.organization, storefront_status: "published" } });
   render(await Organization()); expect(screen.getByText("Publicada")).toBeVisible(); expect(screen.getByRole("button", { name: "Despublicar vitrine" })).toBeVisible();
-  expect(screen.getByRole("link", { name: "Ver página pública da locadora" })).toHaveAttribute("href", "/locadoras/locadora-a");
+  const preview = screen.getByRole("link", { name: "Ver página pública da locadora" });
+  expect(preview).toHaveAttribute("href", "/locadoras/locadora-a?preview=central");
+  expect(preview).toHaveAttribute("target", "_blank");
+  expect(preview).toHaveAttribute("rel", "noopener noreferrer");
 });
 it("member visualiza estado mas não recebe ação de publicação", async () => {
   mocks.context.mockResolvedValue({ ...context, role: "member" }); render(await Organization());

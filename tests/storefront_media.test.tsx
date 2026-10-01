@@ -2,11 +2,13 @@ import { cleanup, render, screen } from "@testing-library/react";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { loadStorefront, loadStorefrontVehicle } from "@/modules/storefront/queries.server";
 import Page from "@/app/locadoras/[slug]/page";
+import VehiclePage from "@/app/locadoras/[slug]/veiculos/[vehicleId]/page";
 
-const mocks = vi.hoisted(() => ({ rpc: vi.fn(), sign: vi.fn() }));
+const mocks = vi.hoisted(() => ({ rpc: vi.fn(), sign: vi.fn(), context: vi.fn() }));
 vi.mock("server-only", () => ({}));
 vi.mock("@/modules/storefront/client.server", () => ({ createStorefrontClient: () => ({ rpc: mocks.rpc }) }));
 vi.mock("@/modules/vehicle_media/queries.server", () => ({ signPublicMedia: mocks.sign }));
+vi.mock("@/modules/central/access.server", () => ({ loadCentralContext: mocks.context }));
 vi.mock("next/navigation", () => ({ notFound: () => { throw new Error("NOT_FOUND"); } }));
 const org = "10000000-0000-4000-8000-000000000001";
 const id = "20000000-0000-4000-8000-000000000011";
@@ -17,7 +19,7 @@ const organization = { slug: "locadora-sintetica", name: "Locadora sintética", 
 const data = { ...organization, vehicles: [vehicle], hasNext: false };
 const signed = images.map(({ storage_path, ...image }) => ({ ...image, url: `https://synthetic.supabase.co/storage/v1/object/sign/vehicle-media/${storage_path}?token=synthetic-capability` }));
 beforeEach(() => {
-  vi.clearAllMocks(); mocks.rpc.mockResolvedValue({ data, error: null });
+  vi.clearAllMocks(); mocks.rpc.mockResolvedValue({ data, error: null }); mocks.context.mockResolvedValue({ status: "anonymous" });
   mocks.sign.mockImplementation(async (records: typeof images) => ({ status: "ready", images: records.map((image) => signed.find((item) => item.id === image.id)) }));
 });
 afterEach(cleanup);
@@ -40,6 +42,20 @@ it("detalhe resolve slug e veículo juntos e entrega galeria na ordem da projeç
   expect(await loadStorefrontVehicle(organization.slug, id)).toEqual({ status: "ready", storefront: { ...organization, vehicle: { ...vehicle, images: signed } } });
   expect(mocks.rpc).toHaveBeenCalledWith("lookup_tenant_storefront_vehicle", { p_slug: organization.slug, p_vehicle_id: id });
   expect(mocks.sign).toHaveBeenCalledWith(images);
+});
+it("detalhe público oferece retorno à frota no slug correto sem CTA inexistente", async () => {
+  mocks.rpc.mockResolvedValue({ data: { ...organization, vehicle }, error: null });
+  render(await VehiclePage({ params: Promise.resolve({ slug: organization.slug, vehicleId: id }), searchParams: Promise.resolve({}) }));
+  expect(screen.queryByRole("link", { name: "Início" })).toBeNull();
+  expect(screen.getByRole("link", { name: "← Voltar à frota" })).toHaveAttribute("href", `/locadoras/${organization.slug}`);
+  expect(screen.queryByRole("link", { name: /interesse|solicitar|reservar/i })).toBeNull();
+});
+it("detalhe do preview preserva o contexto no retorno à frota", async () => {
+  mocks.rpc.mockResolvedValue({ data: { ...organization, vehicle }, error: null });
+  mocks.context.mockResolvedValue({ status: "ready", organization: { slug: organization.slug } });
+  render(await VehiclePage({ params: Promise.resolve({ slug: organization.slug, vehicleId: id }), searchParams: Promise.resolve({ preview: "central" }) }));
+  expect(screen.getByRole("link", { name: "← Voltar à frota" })).toHaveAttribute("href", `/locadoras/${organization.slug}?preview=central`);
+  expect(screen.getByRole("navigation", { name: "Pré-visualização da Central" })).toBeVisible();
 });
 it.each(["draft", "veículo de outra locadora", "inativo", "demo", "ausente"])("detalhe %s não revela nem assina fotos", async () => {
   mocks.rpc.mockResolvedValue({ data: null, error: null });

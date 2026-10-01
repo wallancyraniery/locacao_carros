@@ -22,6 +22,8 @@ a:not(.button):hover { text-decoration-thickness: 2px; }
 .ui-panel { padding: clamp(1.25rem, 3vw, 2rem); background: var(--surface-raised); border: 1px solid var(--border); border-radius: var(--radius-md); box-shadow: var(--shadow-card); margin-block: 1.5rem; }
 .panel-heading { display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap; margin-bottom: 1rem; }
 .panel-heading p { margin: 0; } .publication-panel > p { max-width: 70ch; }
+.publication-actions { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-3); }
+.publication-actions form, .publication-actions p { margin: 0; }
 .status-badge { display: inline-flex; align-items: center; width: fit-content; padding: .3rem .65rem; background: var(--surface-soft); color: #43556b; font-size: var(--type-caption); border-radius: 100px; line-height: 1.4; font-weight: 650; }
 .status-badge.is-positive { background: #e0f3ed; color: #096449; }
 .empty-state { display: grid; justify-items: center; gap: 1rem; padding: 3rem 1.25rem; margin-top: 1.5rem; border: 1px dashed #bacad8; border-radius: var(--radius-md); color: var(--muted); text-align: center; background: var(--surface-raised); }
@@ -85,7 +87,15 @@ a:not(.button):hover { text-decoration-thickness: 2px; }
 fieldset { min-width: 0; } .form-grid > * { min-width: 0; }
 /* Public storefront: the rental company's identity takes priority over platform branding. */
 .storefront-topbar { display: flex; justify-content: space-between; align-items: center; gap: 1rem; padding: 1rem max(1.25rem, calc((100% - 1180px)/2)); border-bottom: 1px solid var(--border); background: white; }
-.storefront-topbar > span:first-child { font-size: var(--type-caption); color: var(--muted); }
+.storefront-nav { display: inline-flex; align-items: center; min-height: 44px; padding: .55rem .75rem; border-radius: var(--radius-sm); font-size: var(--type-caption); }
+a.storefront-nav { color: var(--text); cursor: pointer; text-decoration: none; }
+a.storefront-nav:hover { background: var(--surface-soft); text-decoration: none; }
+.storefront-nav[aria-current="page"] { color: var(--muted); font-weight: 650; }
+.storefront-preview { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: .5rem 1rem; padding: .6rem max(1.25rem, calc((100% - 1180px)/2)); border-bottom: 1px solid var(--border); background: var(--surface-soft); color: var(--muted); font-size: var(--type-caption); }
+.storefront-preview > span { font-weight: 650; color: var(--text); }
+.storefront-preview > div { display: flex; flex-wrap: wrap; gap: .15rem; }
+.storefront-preview a { display: inline-flex; align-items: center; min-height: 44px; padding: .5rem .65rem; border-radius: var(--radius-sm); color: var(--accent-ink); cursor: pointer; font-weight: 650; text-decoration: none; }
+.storefront-preview a:hover { background: white; text-decoration: none; }
 .storefront { overflow-wrap: anywhere; }
 .storefront.section { max-width: 1260px; padding: 2rem clamp(1.25rem, 4vw, 2.5rem) 3rem; }
 .storefront-heading { padding: 1.25rem 1.5rem; border: 1px solid var(--border); border-left: 3px solid #4d9aa6; border-radius: var(--radius-md); margin-bottom: 1.75rem; background: var(--surface-raised); }
@@ -226,8 +236,9 @@ fieldset { min-width: 0; } .form-grid > * { min-width: 0; }
   .central-details { grid-template-columns: minmax(0,1fr); gap: 1rem; }
   .central-metrics > div { padding: 1.1rem; } .central-metrics dt { font-size: .8rem; }
   .storefront-grid, .journey-grid { grid-template-columns: minmax(0,1fr); }
-  .storefront-topbar { padding: .85rem 1.25rem; } .storefront-topbar > span:first-child { display: none; }
-  .storefront-topbar { justify-content: flex-end; }
+  .storefront-topbar { padding: .85rem 1.25rem; }
+  .storefront-nav { padding-inline: .55rem; }
+  .storefront-preview { align-items: start; padding-inline: 1.25rem; }
   .storefront { overflow-wrap: anywhere; }
   .storefront.section { padding-top: 1.5rem; }
   .storefront-section-heading { align-items: start; flex-direction: column; gap: .3rem; }
