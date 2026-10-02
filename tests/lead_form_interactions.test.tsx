@@ -142,3 +142,10 @@ describe("interações do formulário de interesse", () => {
      expect(screen.getByText(/Você decide se deseja enviar/)).toBeInTheDocument();
    } else expect(link).toBeNull();
  });
+
+it("usa rótulo de retorno específico para storefront sem mudar o destino", async () => {
+  submitLeadAction.mockResolvedValueOnce({ status: "success", message: "Sucesso" });
+  const { container } = render(<LeadForm vehicleId="20000000-0000-4000-8000-000000000003" vehicleName="Veículo sintético" operationId="40000000-0000-4000-8000-000000000001" turnstileIdempotencyKey="50000000-0000-4000-8000-000000000001" turnstile={{ mode: "local" }} returnHref="/locadoras/tenant/veiculos/vehicle" returnLabel="Voltar ao veículo" />);
+  fireEvent.click(container.querySelector<HTMLButtonElement>('button[data-intent="submit-interest"]')!);
+  expect(await screen.findByRole("link", { name: "Voltar ao veículo" })).toHaveAttribute("href", "/locadoras/tenant/veiculos/vehicle");
+});

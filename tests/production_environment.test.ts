@@ -55,7 +55,6 @@ describe("contrato local da configuração de produção", () => {
       mode: "cloudflare",
       expectedHostname: "locadora.example.test",
     });
-    expect(result.privacyNotice).toMatchObject({ mode: "configured" });
     expect(fetchMock).not.toHaveBeenCalled();
   });
 
@@ -105,19 +104,6 @@ describe("contrato local da configuração de produção", () => {
     { TURNSTILE_MODE: "cloudflare", NEXT_PUBLIC_TURNSTILE_SITE_KEY: undefined },
     { TURNSTILE_MODE: "cloudflare", TURNSTILE_EXPECTED_HOSTNAME: "https://locadora.example.test" },
   ])("recusa Turnstile local ou incompleto em produção: %o", (override) => {
-    expect(() => parseProductionEnvironment({
-      ...validProductionEnvironment,
-      ...override,
-    })).toThrow();
-  });
-
-  it.each([
-    { PRIVACY_CONTROLLER_NAME: undefined },
-    { PRIVACY_CONTACT_LABEL: undefined },
-    { PRIVACY_CONTACT_URL: undefined },
-    { PRIVACY_CONTROLLER_NAME: "Controlador pendente" },
-    { PRIVACY_CONTACT_URL: "https://example.com/privacidade" },
-  ])("recusa privacidade incompleta ou fictícia em produção: %o", (override) => {
     expect(() => parseProductionEnvironment({
       ...validProductionEnvironment,
       ...override,

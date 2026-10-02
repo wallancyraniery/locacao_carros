@@ -48,7 +48,7 @@ it("detalhe público oferece retorno à frota no slug correto sem CTA inexistent
   render(await VehiclePage({ params: Promise.resolve({ slug: organization.slug, vehicleId: id }), searchParams: Promise.resolve({}) }));
   expect(screen.queryByRole("link", { name: "Início" })).toBeNull();
   expect(screen.getByRole("link", { name: "← Voltar à frota" })).toHaveAttribute("href", `/locadoras/${organization.slug}`);
-  expect(screen.queryByRole("link", { name: /interesse|solicitar|reservar/i })).toBeNull();
+  expect(screen.getByRole("link", { name: "Tenho interesse" })).toHaveAttribute("href", `/interesse?storefront=${organization.slug}&vehicle=${id}`);
 });
 it("detalhe do preview preserva o contexto no retorno à frota", async () => {
   mocks.rpc.mockResolvedValue({ data: { ...organization, vehicle }, error: null });
@@ -56,6 +56,18 @@ it("detalhe do preview preserva o contexto no retorno à frota", async () => {
   render(await VehiclePage({ params: Promise.resolve({ slug: organization.slug, vehicleId: id }), searchParams: Promise.resolve({ preview: "central" }) }));
   expect(screen.getByRole("link", { name: "← Voltar à frota" })).toHaveAttribute("href", `/locadoras/${organization.slug}?preview=central`);
   expect(screen.getByRole("navigation", { name: "Pré-visualização da Central" })).toBeVisible();
+  expect(screen.queryByRole("link", { name: "Tenho interesse" })).toBeNull();
+  expect(screen.getByText("Envio de interesse desativado na pré-visualização")).toHaveAttribute("aria-disabled", "true");
+});
+it.each([
+  ["sem sessão", { status: "anonymous" }],
+  ["de outro tenant", { status: "ready", organization: { slug: "outra-locadora" } }],
+])("preview %s mantém o CTA público ativo", async (_scenario, context) => {
+  mocks.rpc.mockResolvedValue({ data: { ...organization, vehicle }, error: null });
+  mocks.context.mockResolvedValue(context);
+  render(await VehiclePage({ params: Promise.resolve({ slug: organization.slug, vehicleId: id }), searchParams: Promise.resolve({ preview: "central" }) }));
+  expect(screen.queryByRole("navigation", { name: "Pré-visualização da Central" })).toBeNull();
+  expect(screen.getByRole("link", { name: "Tenho interesse" })).toHaveAttribute("href", `/interesse?storefront=${organization.slug}&vehicle=${id}`);
 });
 it.each(["draft", "veículo de outra locadora", "inativo", "demo", "ausente"])("detalhe %s não revela nem assina fotos", async () => {
   mocks.rpc.mockResolvedValue({ data: null, error: null });

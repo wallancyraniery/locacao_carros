@@ -62,3 +62,5 @@ A [página pública por slug](public_tenant_storefront.md) apresenta a projeçã
 A [fundação visual Improve](ui_foundation.md) documenta tokens, tipografia local e componentes de apresentação compartilhados, preservando as fronteiras funcionais existentes.
 
 O [checkpoint de mídia da frota](tenant_vehicle_media.md) conecta gestão owner → capacidade de upload emitida no servidor → upload direto ao Storage privado → decodificação server-side → confirmação runtime restrita → capa/galeria públicas. A migration 0014 preserva o histórico anterior e o isolamento por organização.
+
+A migration 0016 prepara, ainda localmente, a projeção mínima de privacidade do interesse público: para um `slug` publicado e veículo elegível, a RPC retorna somente controlador e canal daquela locadora. O formulário storefront não depende de variáveis globais de privacidade; o demo legado permanece no contrato global até sua migração explícita.

@@ -166,7 +166,7 @@ describe("contrato de acesso do runtime", () => {
       { tablename: "organizations", policyname: "lead_intake_runtime_enable_demo_organization_select", permissive: "PERMISSIVE", cmd: "SELECT", roles: ["lead_intake_runtime"] },
       { tablename: "organizations", policyname: "lead_intake_runtime_guard_demo_organization_select", permissive: "RESTRICTIVE", cmd: "SELECT", roles: ["lead_intake_runtime"] },
       { tablename: "rental_leads", policyname: "lead_intake_runtime_enable_new_demo_lead_insert", permissive: "PERMISSIVE", cmd: "INSERT", roles: ["lead_intake_runtime"] },
-      { tablename: "rental_leads", policyname: "lead_intake_runtime_guard_new_demo_lead_insert", permissive: "RESTRICTIVE", cmd: "INSERT", roles: ["lead_intake_runtime"] },
+      { tablename: "rental_leads", policyname: "lead_intake_runtime_guard_new_or_storefront_lead_insert", permissive: "RESTRICTIVE", cmd: "INSERT", roles: ["lead_intake_runtime"] },
       { tablename: "vehicles", policyname: "lead_intake_runtime_enable_available_demo_vehicle_select", permissive: "PERMISSIVE", cmd: "SELECT", roles: ["lead_intake_runtime"] },
       { tablename: "vehicles", policyname: "lead_intake_runtime_guard_available_demo_vehicle_select", permissive: "RESTRICTIVE", cmd: "SELECT", roles: ["lead_intake_runtime"] },
     ]);

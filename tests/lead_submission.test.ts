@@ -8,10 +8,12 @@ vi.mock("server-only", () => ({}));
 
 const drizzleRepository = vi.hoisted(() => ({
   findAvailableDemoVehicle: vi.fn(),
+  findAvailableStorefrontVehicle: vi.fn(),
   createLead: vi.fn(),
 }));
 vi.mock("@/modules/leads/infrastructure/drizzle_lead_repository.server", () => ({ drizzleLeadRepository: drizzleRepository }));
 const turnstileProtection = vi.hoisted(() => ({ verify: vi.fn() }));
+const privacyReadiness = vi.hoisted(() => ({ verify: vi.fn() }));
 vi.mock("@/modules/leads/infrastructure/turnstile_submission_protection.server", () => ({ turnstileSubmissionProtection: turnstileProtection }));
 
 const validInput = {
@@ -38,6 +40,7 @@ const protection = () => ({ verify: vi.fn().mockResolvedValue(true) });
 function repository(): LeadRepository {
   return {
     findAvailableDemoVehicle: vi.fn().mockResolvedValue({ id: validInput.vehicleId, organizationId: "10000000-0000-4000-8000-000000000001" }),
+    findAvailableStorefrontVehicle: vi.fn(),
     createLead: vi.fn().mockResolvedValue({ id: "30000000-0000-4000-8000-000000000001" }),
   };
 }
@@ -58,6 +61,7 @@ describe("envio de interesse", () => {
     });
     drizzleRepository.createLead.mockReset().mockResolvedValue({ id: "30000000-0000-4000-8000-000000000001" });
     turnstileProtection.verify.mockReset().mockResolvedValue(true);
+    privacyReadiness.verify.mockReset().mockResolvedValue(true);
   });
 
   it("valida, normaliza e envia dados válidos", async () => {
@@ -87,6 +91,25 @@ describe("envio de interesse", () => {
   it("limita entradas excessivas", async () => {
     const result = await submitLead(repository(), protection(), { ...validInput, fullName: "a".repeat(121) });
     expect(result).toMatchObject({ status: "invalid", errors: { fullName: ["Nome completo deve ter no máximo 120 caracteres."] } });
+  });
+
+  it("storefront revalida privacidade antes do Turnstile e do repositório", async () => {
+    const adapter = repository();
+    privacyReadiness.verify.mockResolvedValueOnce(false);
+    const result = await submitLead(adapter, protection(), { ...validInput, storefrontSlug: "locadora-real" }, privacyReadiness);
+    expect(result.status).toBe("privacy");
+    expect(privacyReadiness.verify).toHaveBeenCalledWith({ storefrontSlug: "locadora-real", vehicleId: validInput.vehicleId });
+    expect(turnstileProtection.verify).not.toHaveBeenCalled();
+    expect(adapter.findAvailableStorefrontVehicle).not.toHaveBeenCalled();
+    expect(adapter.createLead).not.toHaveBeenCalled();
+  });
+  it("storefront pronto avança para Turnstile sem depender de PRIVACY global", async () => {
+    const adapter = repository();
+    vi.mocked(adapter.findAvailableStorefrontVehicle).mockResolvedValue({ id: validInput.vehicleId, organizationId: "90000000-0000-4000-8000-000000000001" });
+    const verifier = protection();
+    await submitLead(adapter, verifier, { ...validInput, storefrontSlug: "locadora-real" }, privacyReadiness);
+    expect(privacyReadiness.verify).toHaveBeenCalled();
+    expect(verifier.verify).toHaveBeenCalled();
   });
 
   it("ignora honeypot preenchido sem consultar ou persistir", async () => {
@@ -243,6 +266,7 @@ describe("envio de interesse", () => {
   beforeEach(() => {
     vi.stubEnv("WHATSAPP_BUSINESS_NUMBER", "5511999990000");
     turnstileProtection.verify.mockReset().mockResolvedValue(true);
+    privacyReadiness.verify.mockReset().mockResolvedValue(true);
     drizzleRepository.findAvailableDemoVehicle.mockReset().mockResolvedValue({ id: validInput.vehicleId, organizationId: "10000000-0000-4000-8000-000000000001" });
     drizzleRepository.createLead.mockReset().mockResolvedValue({ id: "30000000-0000-4000-8000-000000000001" });
   });
@@ -293,4 +317,13 @@ describe("envio de interesse", () => {
       expect(result).not.toHaveProperty("whatsappUrl");
     } finally { log.mockRestore(); }
   });
+});
+
+it("resolve storefront no servidor e não aceita organizationId do navegador", async () => {
+  const adapter = repository();
+  adapter.findAvailableStorefrontVehicle = vi.fn().mockResolvedValue({ id: validInput.vehicleId, organizationId: "90000000-0000-4000-8000-000000000001" });
+  const result = await submitLead(adapter, protection(), { ...validInput, storefrontSlug: "locadora-real", organizationId: "forged" } as never);
+  expect(result).toMatchObject({ status: "success", storefront: true });
+  expect(adapter.findAvailableStorefrontVehicle).toHaveBeenCalledWith("locadora-real", validInput.vehicleId);
+  expect(adapter.createLead).toHaveBeenCalledWith(expect.objectContaining({ organizationId: "90000000-0000-4000-8000-000000000001" }));
 });
