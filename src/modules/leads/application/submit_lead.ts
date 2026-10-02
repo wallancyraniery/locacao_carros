@@ -5,6 +5,7 @@ export type SubmitLeadResult =
   | { status: "success"; leadId: string; storefront: boolean }
   | { status: "ignored" }
   | { status: "blocked"; errors: Record<string, string[]> }
+  | { status: "privacy"; errors: Record<string, string[]> }
   | { status: "invalid"; errors: Record<string, string[]> }
   | { status: "unavailable"; errors: Record<string, string[]> };
 
@@ -12,11 +13,16 @@ export async function submitLead(
   repository: LeadRepository,
   protection: LeadSubmissionProtection,
   input: LeadSubmissionInput,
+  privacyReadiness: { verify(input: { storefrontSlug?: string; vehicleId: string }): Promise<boolean> } = { verify: async () => true },
 ): Promise<SubmitLeadResult> {
   if (typeof input.website === "string" && input.website.trim()) return { status: "ignored" };
 
   const parsed = leadSubmissionSchema.safeParse(input);
   if (!parsed.success) return { status: "invalid", errors: formatLeadValidationErrors(parsed.error) };
+
+  if (!await privacyReadiness.verify({ storefrontSlug: parsed.data.storefrontSlug, vehicleId: parsed.data.vehicleId })) {
+    return { status: "privacy", errors: { form: ["Não foi possível enviar seu interesse agora. Tente novamente mais tarde."] } };
+  }
 
   const protectedSubmission = await protection.verify({
     token: parsed.data.turnstileToken,

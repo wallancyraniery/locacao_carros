@@ -7,6 +7,7 @@ import type { LeadFormState } from "../components/lead_form_state";
 import { drizzleLeadRepository } from "../infrastructure/drizzle_lead_repository.server";
 import { reportUnexpectedLeadSubmissionError } from "../infrastructure/lead_repository_diagnostic";
 import { turnstileSubmissionProtection } from "../infrastructure/turnstile_submission_protection.server";
+import { leadPrivacyReadiness } from "../infrastructure/privacy_readiness.server";
 import type { LeadSubmissionInput } from "../validation/lead_submission";
 
 export async function submitLeadAction(_state: LeadFormState, formData: FormData): Promise<LeadFormState> {
@@ -16,7 +17,7 @@ export async function submitLeadAction(_state: LeadFormState, formData: FormData
   ].includes(key)));
   let result: SubmitLeadResult;
   try {
-    result = await submitLead(drizzleLeadRepository, turnstileSubmissionProtection, values as LeadSubmissionInput);
+    result = await submitLead(drizzleLeadRepository, turnstileSubmissionProtection, values as LeadSubmissionInput, leadPrivacyReadiness);
   } catch (error) {
     reportUnexpectedLeadSubmissionError(error);
     return { status: "error", message: "Não foi possível enviar seu interesse agora. Tente novamente mais tarde.", values: formValues };
@@ -27,6 +28,7 @@ export async function submitLeadAction(_state: LeadFormState, formData: FormData
       ...(whatsappUrl ? { whatsappUrl } : {}),
     };
   }
+  if (result.status === "privacy") return { status: "error", message: "Não foi possível enviar seu interesse agora. Tente novamente mais tarde.", values: formValues };
   if (result.status === "blocked" || result.errors.turnstileToken) {
     return {
       status: "error",

@@ -122,7 +122,7 @@ describe("integração local dos gates públicos", () => {
     expect(drizzleRepository.findAvailableDemoVehicle).not.toHaveBeenCalled();
     expect(drizzleRepository.createLead).not.toHaveBeenCalled();
     expect(consoleError).toHaveBeenCalledExactlyOnceWith({
-      stage: "verify_turnstile",
+      stage: "verify_privacy_readiness",
       code: "INVALID_PRIVACY_NOTICE_ENVIRONMENT",
     });
     const diagnostic = JSON.stringify(consoleError.mock.calls);

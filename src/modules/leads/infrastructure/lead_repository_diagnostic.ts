@@ -6,6 +6,7 @@ export type LeadRepositoryFailureStage =
   | "find_available_storefront_vehicle"
   | "create_lead"
   | "verify_turnstile"
+  | "verify_privacy_readiness"
   | "submit_lead";
 
 export type SafeLeadRepositoryDiagnostic = {
