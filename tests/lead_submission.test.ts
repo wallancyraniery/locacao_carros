@@ -8,6 +8,7 @@ vi.mock("server-only", () => ({}));
 
 const drizzleRepository = vi.hoisted(() => ({
   findAvailableDemoVehicle: vi.fn(),
+  findAvailableStorefrontVehicle: vi.fn(),
   createLead: vi.fn(),
 }));
 vi.mock("@/modules/leads/infrastructure/drizzle_lead_repository.server", () => ({ drizzleLeadRepository: drizzleRepository }));
@@ -38,6 +39,7 @@ const protection = () => ({ verify: vi.fn().mockResolvedValue(true) });
 function repository(): LeadRepository {
   return {
     findAvailableDemoVehicle: vi.fn().mockResolvedValue({ id: validInput.vehicleId, organizationId: "10000000-0000-4000-8000-000000000001" }),
+    findAvailableStorefrontVehicle: vi.fn(),
     createLead: vi.fn().mockResolvedValue({ id: "30000000-0000-4000-8000-000000000001" }),
   };
 }
@@ -293,4 +295,13 @@ describe("envio de interesse", () => {
       expect(result).not.toHaveProperty("whatsappUrl");
     } finally { log.mockRestore(); }
   });
+});
+
+it("resolve storefront no servidor e não aceita organizationId do navegador", async () => {
+  const adapter = repository();
+  adapter.findAvailableStorefrontVehicle = vi.fn().mockResolvedValue({ id: validInput.vehicleId, organizationId: "90000000-0000-4000-8000-000000000001" });
+  const result = await submitLead(adapter, protection(), { ...validInput, storefrontSlug: "locadora-real", organizationId: "forged" } as never);
+  expect(result).toMatchObject({ status: "success", storefront: true });
+  expect(adapter.findAvailableStorefrontVehicle).toHaveBeenCalledWith("locadora-real", validInput.vehicleId);
+  expect(adapter.createLead).toHaveBeenCalledWith(expect.objectContaining({ organizationId: "90000000-0000-4000-8000-000000000001" }));
 });

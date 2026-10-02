@@ -15,6 +15,7 @@ export const leadSubmissionSchema = z.object({
   turnstileIdempotencyKey: z.string().uuid("Tentativa de proteção inválida."),
   turnstileToken: z.string().trim().min(1, "Confirme a proteção contra abuso.").max(2048, "Proteção contra abuso inválida."),
   vehicleId: z.string().uuid("Selecione um veículo válido."),
+  storefrontSlug: z.string().trim().max(63).optional(),
   fullName: trimmedText("Nome completo", 3, 120),
   phone: z.string().trim().regex(/^\(?[1-9]{2}\)?\s?(?:9\s?)?\d{4}[-\s]?\d{4}$/, "Informe um telefone brasileiro válido."),
   email: z.string().trim().max(160, "E-mail muito longo.").refine((value) => !value || z.email().safeParse(value).success, "Informe um e-mail válido.").transform((value) => value || null),

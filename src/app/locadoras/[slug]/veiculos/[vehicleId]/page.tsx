@@ -52,7 +52,8 @@ export default async function StorefrontVehiclePage({ params, searchParams }: {
           {vehicle.version && <p className="caption">{vehicle.version}</p>}
           <dl className="vehicle-details"><div><dt>Ano</dt><dd>{vehicle.year}</dd></div><div><dt>Cor</dt><dd>{vehicle.color}</dd></div></dl>
           <p className="price"><strong>{formatRentalMoney(vehicle.weekly_price_cents)}</strong> <span>/ semana</span></p>
-          <p className="storefront-notice">A exibição do veículo não confirma disponibilidade para um período. Solicitações por esta página ainda não estão disponíveis.</p>
+          <p className="storefront-notice">O envio de interesse não representa reserva, aprovação ou garantia de disponibilidade. A locadora confirmará as condições.</p>
+          <Link className="button primary" href={`/interesse?storefront=${org.slug}&vehicle=${vehicle.id}`}>Tenho interesse</Link>
         </aside>
       </div>
     </main>

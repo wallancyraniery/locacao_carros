@@ -2,7 +2,7 @@ import type { LeadRepository, LeadSubmissionProtection } from "../domain/lead_re
 import { formatLeadValidationErrors, leadSubmissionSchema, type LeadSubmissionInput } from "../validation/lead_submission";
 
 export type SubmitLeadResult =
-  | { status: "success"; leadId: string }
+  | { status: "success"; leadId: string; storefront: boolean }
   | { status: "ignored" }
   | { status: "blocked"; errors: Record<string, string[]> }
   | { status: "invalid"; errors: Record<string, string[]> }
@@ -27,7 +27,10 @@ export async function submitLead(
     return { status: "blocked", errors: { form: ["Não foi possível validar a proteção contra abuso. Tente novamente."] } };
   }
 
-  const vehicle = await repository.findAvailableDemoVehicle(parsed.data.vehicleId);
+  const storefront = !!parsed.data.storefrontSlug;
+  const vehicle = storefront
+    ? await repository.findAvailableStorefrontVehicle(parsed.data.storefrontSlug!, parsed.data.vehicleId)
+    : await repository.findAvailableDemoVehicle(parsed.data.vehicleId);
   if (!vehicle) return { status: "unavailable", errors: { vehicleId: ["O veículo selecionado não está disponível."] } };
 
   const created = await repository.createLead({
@@ -44,5 +47,5 @@ export async function submitLead(
     driverPlatform: parsed.data.driverPlatform,
     preferredContactTime: parsed.data.preferredContactTime,
   });
-  return { status: "success", leadId: created.id };
+  return { status: "success", leadId: created.id, storefront };
 }

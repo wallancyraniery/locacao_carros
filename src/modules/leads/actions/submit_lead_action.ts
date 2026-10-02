@@ -12,7 +12,7 @@ import type { LeadSubmissionInput } from "../validation/lead_submission";
 export async function submitLeadAction(_state: LeadFormState, formData: FormData): Promise<LeadFormState> {
   const values = Object.fromEntries([...formData.entries()].map(([key, value]) => [key, typeof value === "string" ? value : ""]));
   const formValues = Object.fromEntries(Object.entries(values).filter(([key]) => ![
-    "operationId", "turnstileIdempotencyKey", "turnstileToken", "website", "vehicleId",
+    "operationId", "turnstileIdempotencyKey", "turnstileToken", "website", "vehicleId", "storefrontSlug",
   ].includes(key)));
   let result: SubmitLeadResult;
   try {
@@ -22,7 +22,7 @@ export async function submitLeadAction(_state: LeadFormState, formData: FormData
     return { status: "error", message: "Não foi possível enviar seu interesse agora. Tente novamente mais tarde.", values: formValues };
   }
   if (result.status === "success" || result.status === "ignored") {
-    const whatsappUrl = result.status === "success" ? getWhatsAppContinuationUrl() : undefined;
+    const whatsappUrl = result.status === "success" && !result.storefront ? getWhatsAppContinuationUrl() : undefined;
     return { status: "success", message: "Interesse enviado com sucesso. A locadora analisará seus dados e entrará em contato.",
       ...(whatsappUrl ? { whatsappUrl } : {}),
     };

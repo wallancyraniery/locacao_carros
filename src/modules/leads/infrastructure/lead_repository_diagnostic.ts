@@ -3,6 +3,7 @@ import { safeDatabaseErrorCode } from "@/modules/database/safe_error_code";
 export type LeadRepositoryFailureStage =
   | "runtime_client_initialization"
   | "find_available_demo_vehicle"
+  | "find_available_storefront_vehicle"
   | "create_lead"
   | "verify_turnstile"
   | "submit_lead";
