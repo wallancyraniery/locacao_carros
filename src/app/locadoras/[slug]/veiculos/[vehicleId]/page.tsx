@@ -53,7 +53,9 @@ export default async function StorefrontVehiclePage({ params, searchParams }: {
           <dl className="vehicle-details"><div><dt>Ano</dt><dd>{vehicle.year}</dd></div><div><dt>Cor</dt><dd>{vehicle.color}</dd></div></dl>
           <p className="price"><strong>{formatRentalMoney(vehicle.weekly_price_cents)}</strong> <span>/ semana</span></p>
           <p className="storefront-notice">O envio de interesse não representa reserva, aprovação ou garantia de disponibilidade. A locadora confirmará as condições.</p>
-          <Link className="button primary" href={`/interesse?storefront=${org.slug}&vehicle=${vehicle.id}`}>Tenho interesse</Link>
+          {centralPreview
+            ? <p className="button button-disabled" aria-disabled="true">Envio de interesse desativado na pré-visualização</p>
+            : <Link className="button primary" href={`/interesse?storefront=${org.slug}&vehicle=${vehicle.id}`}>Tenho interesse</Link>}
         </aside>
       </div>
     </main>
