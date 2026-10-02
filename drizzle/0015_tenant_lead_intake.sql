@@ -36,7 +36,7 @@ GRANT EXECUTE ON FUNCTION public.resolve_tenant_lead_intake(text,uuid) TO lead_i
 DROP POLICY "lead_intake_runtime_guard_new_demo_lead_insert" ON public.rental_leads;
 CREATE POLICY "lead_intake_runtime_guard_new_or_storefront_lead_insert" ON public.rental_leads AS RESTRICTIVE FOR INSERT TO lead_intake_runtime WITH CHECK (
   status='new' AND vehicle_id IS NOT NULL AND (
-    (organization_id='10000000-0000-4000-8000-000000000001'::uuid AND EXISTS(SELECT 1 FROM public.vehicles WHERE id=rental_leads.vehicle_id AND organization_id=rental_leads.organization_id AND is_demo AND status='available'))
+    (organization_id='10000000-0000-4000-8000-000000000001'::uuid AND EXISTS(SELECT 1 FROM public.vehicles WHERE id=rental_leads.vehicle_id AND organization_id=rental_leads.organization_id AND is_demo AND operational_status='active' AND status='available'))
     OR tenant_lead_intake_private.eligible(organization_id,vehicle_id)
   )
 );
