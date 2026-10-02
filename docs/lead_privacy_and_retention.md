@@ -6,13 +6,15 @@ O formulário coleta somente nome, telefone, e-mail opcional, cidade, finalidade
 
 O aviso informa a finalidade de analisar a manifestação e realizar contato, além da retenção de 90 dias contados da criação do lead (`created_at`), sem reinício por contato ou atualização. Ao completar 90 dias, o registro entra no procedimento administrativo de eliminação; não há exclusão automática. `converted` representa a saída desse ciclo por estado; aprovação ou contato, isoladamente, ainda não representam relação contratual. A exclusão de `converted` deste procedimento não autoriza conservação ilimitada: as regras para a relação contratual ainda dependem de definição do controlador. Antes da execução, o responsável deve conferir se as conversões estão registradas corretamente.
 
-Em desenvolvimento e testes, a interface mostra que a identidade jurídica e o canal oficial estão pendentes. Em produção, a aplicação falha antes de renderizar o formulário se estas variáveis server-side não forem válidas:
+No fluxo storefront publicado, o aviso é derivado exclusivamente da organização e do veículo da URL: `data_controller`, `privacy_channel_label` e `privacy_channel_url` são retornados por uma fronteira pública estreita somente quando o slug está publicado e o veículo é real, ativo e disponível. A página valida os três valores com as mesmas regras do contrato público; ausência ou invalidez deixa o formulário indisponível. Não há fallback global nem dados de outra organização.
+
+O fluxo demonstrativo legado permanece, por enquanto, dependente das variáveis globais server-side em produção:
 
 - `PRIVACY_CONTROLLER_NAME`;
 - `PRIVACY_CONTACT_LABEL`;
 - `PRIVACY_CONTACT_URL`.
 
-Nenhum valor oficial deve ser inferido. O controlador precisa fornecer e aprovar a identidade e o canal antes do primeiro acesso público.
+Nenhum valor oficial deve ser inferido. No Preview do storefront, além da configuração runtime Supabase (`DATABASE_RUNTIME_PROVIDER`, `SUPABASE_RUNTIME_PROJECT_REF`, `SUPABASE_RUNTIME_DATABASE_URL`, `SUPABASE_RUNTIME_SSL_CA_BASE64`, `SUPABASE_RUNTIME_CONFIRMATION`), o Turnstile continua exigindo `TURNSTILE_MODE`, `NEXT_PUBLIC_TURNSTILE_SITE_KEY`, `TURNSTILE_SECRET_KEY` e `TURNSTILE_EXPECTED_HOSTNAME` compatível com o hostname real do Preview. Esses valores técnicos não substituem os dados de privacidade por tenant.
 
 ## Solicitações sobre dados
 

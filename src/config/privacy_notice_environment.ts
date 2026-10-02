@@ -25,19 +25,23 @@ const officialContact = z.string().trim().url().refine((value) => {
     && !/(?:example|exemplo|placeholder|defina|pendente|\.(?:test|invalid|localhost)(?:[/:?#]|$))/i.test(value);
 });
 
-export function parsePrivacyNoticeEnvironment(environment: Record<string, string | undefined>): PrivacyNoticeConfiguration {
+export function parseConfiguredPrivacyNotice(environment: Record<string, string | undefined>): Extract<PrivacyNoticeConfiguration, { mode: "configured" }> | null {
   const result = z.object({
     PRIVACY_CONTROLLER_NAME: officialText,
     PRIVACY_CONTACT_LABEL: officialText,
     PRIVACY_CONTACT_URL: officialContact,
   }).safeParse(environment);
-
-  if (result.success) return {
+  return result.success ? {
     mode: "configured",
     controllerName: result.data.PRIVACY_CONTROLLER_NAME,
     contactLabel: result.data.PRIVACY_CONTACT_LABEL,
     contactHref: result.data.PRIVACY_CONTACT_URL,
-  };
+  } : null;
+}
+
+export function parsePrivacyNoticeEnvironment(environment: Record<string, string | undefined>): PrivacyNoticeConfiguration {
+  const configured = parseConfiguredPrivacyNotice(environment);
+  if (configured) return configured;
   if (environment.NODE_ENV === "production") throw new PrivacyNoticeEnvironmentError();
   return { mode: "pending" };
 }
