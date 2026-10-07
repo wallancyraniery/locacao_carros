@@ -1,5 +1,5 @@
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const { submitLeadAction } = vi.hoisted(() => ({
   submitLeadAction: vi.fn(async (_state: unknown, formData: FormData): Promise<{
@@ -19,15 +19,17 @@ vi.mock("@/modules/leads/actions/submit_lead_action", () => ({ submitLeadAction 
 
 import { LeadForm } from "@/modules/leads/components/lead_form";
 
-describe("interações do formulário de interesse", () => {
-  beforeEach(() => {
-    submitLeadAction.mockReset().mockImplementation(async (_state: unknown, formData: FormData) => ({
-      status: "error" as const,
-      message: "Revise os campos indicados.",
-      values: Object.fromEntries(formData.entries()) as Record<string, string>,
-    }));
-  });
+afterEach(cleanup);
 
+beforeEach(() => {
+  submitLeadAction.mockReset().mockImplementation(async (_state: unknown, formData: FormData) => ({
+    status: "error" as const,
+    message: "Revise os campos indicados.",
+    values: Object.fromEntries(formData.entries()) as Record<string, string>,
+  }));
+});
+
+describe("interações do formulário de interesse", () => {
   it("preserva os valores e executa a action somente pelo botão final", async () => {
     const props = {
       vehicleId: "20000000-0000-4000-8000-000000000001",
@@ -148,4 +150,26 @@ it("usa rótulo de retorno específico para storefront sem mudar o destino", asy
   const { container } = render(<LeadForm vehicleId="20000000-0000-4000-8000-000000000003" vehicleName="Veículo sintético" operationId="40000000-0000-4000-8000-000000000001" turnstileIdempotencyKey="50000000-0000-4000-8000-000000000001" turnstile={{ mode: "local" }} returnHref="/locadoras/tenant/veiculos/vehicle" returnLabel="Voltar ao veículo" />);
   fireEvent.click(container.querySelector<HTMLButtonElement>('button[data-intent="submit-interest"]')!);
   expect(await screen.findByRole("link", { name: "Voltar ao veículo" })).toHaveAttribute("href", "/locadoras/tenant/veiculos/vehicle");
+});
+
+it.each([
+  ["11987654321", "(11) 98765-4321"],
+  ["1134567890", "(11) 3456-7890"],
+  ["119876543210", "119876543210"],
+])("formata telefone no blur e preserva após erro: %s", async (input, expected) => {
+  submitLeadAction.mockImplementationOnce(async (_state, data) => ({ status: "error", message: "Erro sintético do telefone", values: Object.fromEntries(data.entries()) as Record<string, string> }));
+  const props = { vehicleId: "20000000-0000-4000-8000-000000000003", vehicleName: "Veículo sintético", operationId: "40000000-0000-4000-8000-000000000001", turnstileIdempotencyKey: "50000000-0000-4000-8000-000000000001", turnstile: { mode: "local" as const } };
+  const { container, rerender } = render(<LeadForm {...props} />);
+  const phone = screen.getByLabelText("Telefone");
+  expect(phone).toHaveAttribute("type", "tel");
+  expect(phone).toHaveAttribute("inputmode", "tel");
+  fireEvent.change(phone, { target: { value: input } });
+  expect(phone).toHaveValue(input);
+  fireEvent.blur(phone);
+  expect(phone).toHaveValue(expected);
+  fireEvent.click(container.querySelector<HTMLButtonElement>('button[data-intent="submit-interest"]')!);
+  await screen.findByText("Erro sintético do telefone");
+  expect(submitLeadAction.mock.lastCall?.[1].get("phone")).toBe(expected);
+  rerender(<LeadForm {...props} />);
+  expect(screen.getByLabelText("Telefone")).toHaveValue(expected);
 });
