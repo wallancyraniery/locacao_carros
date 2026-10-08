@@ -27,6 +27,9 @@ export const storefrontVehicleSchema = z.object({
   }
 });
 const organizationShape = { slug: storefrontSlug, name: z.string().min(1), city: z.string().nullable() };
+export const storefrontInterestPrivacySchema = z.object({
+  data_controller: z.string(), privacy_channel_label: z.string(), privacy_channel_url: z.string(),
+}).strict();
 export const storefrontSchema = z.object({
   ...organizationShape, vehicles: z.array(storefrontVehicleSchema).max(24), hasNext: z.boolean(),
 }).strict();

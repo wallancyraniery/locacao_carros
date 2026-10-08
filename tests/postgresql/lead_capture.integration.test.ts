@@ -54,6 +54,7 @@ describe("captura de interesse no PostgreSQL", () => {
         const [vehicle] = await sql`select id, organization_id from vehicles where id = ${vehicleId} and organization_id = ${organizationId} and operational_status = 'active' and is_demo = true`;
         return vehicle ? { id: vehicle.id, organizationId: vehicle.organization_id } : null;
       },
+      async findAvailableStorefrontVehicle() { return null; },
       async createLead(lead: NewLead) {
         const id = randomUUID();
         await sql`insert into rental_leads (id, operation_id, organization_id, vehicle_id, full_name, phone, email, city, has_definitive_license, usage_purpose, has_ear, driver_platform, preferred_contact_time, status) values (${id}, ${lead.operationId}, ${lead.organizationId}, ${lead.vehicleId}, ${lead.fullName}, ${lead.phone}, ${lead.email}, ${lead.city}, ${lead.hasDefinitiveLicense}, ${lead.usagePurpose}, ${lead.hasEar}, ${lead.driverPlatform}, ${lead.preferredContactTime}, 'new') on conflict do nothing`;

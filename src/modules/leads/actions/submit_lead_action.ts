@@ -7,25 +7,31 @@ import type { LeadFormState } from "../components/lead_form_state";
 import { drizzleLeadRepository } from "../infrastructure/drizzle_lead_repository.server";
 import { reportUnexpectedLeadSubmissionError } from "../infrastructure/lead_repository_diagnostic";
 import { turnstileSubmissionProtection } from "../infrastructure/turnstile_submission_protection.server";
+import { leadPrivacyReadiness } from "../infrastructure/privacy_readiness.server";
+import { reportTurnstileInputRejected } from "../infrastructure/turnstile_input_diagnostic.server";
 import type { LeadSubmissionInput } from "../validation/lead_submission";
 
 export async function submitLeadAction(_state: LeadFormState, formData: FormData): Promise<LeadFormState> {
   const values = Object.fromEntries([...formData.entries()].map(([key, value]) => [key, typeof value === "string" ? value : ""]));
   const formValues = Object.fromEntries(Object.entries(values).filter(([key]) => ![
-    "operationId", "turnstileIdempotencyKey", "turnstileToken", "website", "vehicleId",
+    "operationId", "turnstileIdempotencyKey", "turnstileToken", "website", "vehicleId", "storefrontSlug",
   ].includes(key)));
   let result: SubmitLeadResult;
   try {
-    result = await submitLead(drizzleLeadRepository, turnstileSubmissionProtection, values as LeadSubmissionInput);
+    result = await submitLead(drizzleLeadRepository, turnstileSubmissionProtection, values as LeadSubmissionInput, leadPrivacyReadiness);
   } catch (error) {
     reportUnexpectedLeadSubmissionError(error);
     return { status: "error", message: "Não foi possível enviar seu interesse agora. Tente novamente mais tarde.", values: formValues };
   }
   if (result.status === "success" || result.status === "ignored") {
-    const whatsappUrl = result.status === "success" ? getWhatsAppContinuationUrl() : undefined;
+    const whatsappUrl = result.status === "success" && !result.storefront ? getWhatsAppContinuationUrl() : undefined;
     return { status: "success", message: "Interesse enviado com sucesso. A locadora analisará seus dados e entrará em contato.",
       ...(whatsappUrl ? { whatsappUrl } : {}),
     };
+  }
+  if (result.status === "privacy") return { status: "error", message: "Não foi possível enviar seu interesse agora. Tente novamente mais tarde.", values: formValues };
+  if (result.status === "invalid" && result.errors.turnstileToken) {
+    reportTurnstileInputRejected(formData.get("turnstileToken"));
   }
   if (result.status === "blocked" || result.errors.turnstileToken) {
     return {

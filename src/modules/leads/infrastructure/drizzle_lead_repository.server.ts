@@ -27,6 +27,15 @@ export const drizzleLeadRepository: LeadRepository = {
     return vehicle;
   },
 
+  async findAvailableStorefrontVehicle(slug, vehicleId) {
+    const database = await runtimeDatabase();
+    const result = await runWithLeadRepositoryDiagnostic("find_available_storefront_vehicle", () => database.execute(sql`select public.resolve_tenant_lead_intake(${slug}, ${vehicleId}::uuid) as data`));
+    const data = (result[0] as { data: unknown } | undefined)?.data;
+    if (!data || typeof data !== "object") return null;
+    const value = data as { organization_id?: string; vehicle_id?: string };
+    return typeof value.organization_id === "string" && typeof value.vehicle_id === "string" ? { organizationId: value.organization_id, id: value.vehicle_id } : null;
+  },
+
   async createLead(lead: NewLead) {
     const database = await runtimeDatabase();
     const id = randomUUID();

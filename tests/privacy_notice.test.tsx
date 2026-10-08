@@ -24,7 +24,7 @@ describe("aviso público de privacidade", () => {
     const fields = [...new Set([...source.matchAll(/name="([^"]+)"/g)].map((match) => match[1]))].sort();
     expect(fields).toEqual([
       "acknowledgement", "city", "driverPlatform", "eligibilityAcknowledgement", "email", "fullName",
-      "hasDefinitiveLicense", "hasEar", "operationId", "phone", "preferredContactTime", "turnstileIdempotencyKey",
+      "hasDefinitiveLicense", "hasEar", "operationId", "phone", "preferredContactTime", "storefrontSlug", "turnstileIdempotencyKey",
       "turnstileToken", "usagePurpose", "vehicleId", "website",
     ]);
     for (const field of fields) {
