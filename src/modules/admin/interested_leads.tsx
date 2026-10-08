@@ -13,7 +13,7 @@ export function InterestedLeads({ leads }: { leads: InterestedLead[] }) {
       <td><time dateTime={lead.created_at}>{new Intl.DateTimeFormat("pt-BR", { dateStyle: "short", timeStyle: "short", timeZone: "America/Sao_Paulo" }).format(new Date(lead.created_at))}</time></td>
       <td>{lead.full_name}</td><td>{lead.phone}{lead.email && <><br />{lead.email}</>}</td><td>{lead.city}</td>
       <td>{lead.vehicles ? [lead.vehicles.brand, lead.vehicles.model, lead.vehicles.version, lead.vehicles.year].filter(Boolean).join(" ") : "Não informado"}</td>
-      <td>{lead.preferred_contact_time || "Não informado"}</td><td><span className="status-badge">{statuses[lead.status] ?? "Não informado"}</span></td>
+      <td>{lead.preferred_contact_time || "Não informado"}</td><td><span className={`status-badge ${lead.status === "new" ? "is-new" : ""}`}>{statuses[lead.status] ?? "Não informado"}</span></td>
     </tr>)}</tbody>
   </table></div>;
 }

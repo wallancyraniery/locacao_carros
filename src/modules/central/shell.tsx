@@ -8,10 +8,9 @@ export function CentralShell({ title, current, name, email, role, children }: {
   return <div className="central-workspace">
     <a className="skip-link" href="#central-content">Pular para o conteúdo</a>
     <aside className="central-sidebar">
-      <div className="central-brand"><ImproveBrand /><span>Central da locadora</span></div>
-      <div className="central-tenant"><span className="caption">Sua locadora</span><strong>{name || "Área privada"}</strong></div>
+      <div className="central-tenant"><span className="central-context-label">Central da locadora</span><strong className="central-tenant-name">{name || "Área privada"}</strong></div>
       <CentralNavigation current={current} />
-      <p className="sidebar-note">Um lugar para acompanhar sua operação.</p>
+      <div className="central-sidebar-footer"><ImproveBrand subtle /><p className="sidebar-note">Um lugar para acompanhar sua operação.</p></div>
     </aside>
     <div className="central-main">
       <header className="central-topbar"><span className="caption">Área privada</span><div className="central-session"><div>{email && <span className="session-email" title={email}>{email}</span>}<span className="session-role">{role === "owner" ? "Conta proprietária" : role === "member" ? "Conta da equipe" : "Acesso à Central"}</span></div><LogoutForm /></div></header>

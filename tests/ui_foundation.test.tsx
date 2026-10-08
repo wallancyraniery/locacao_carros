@@ -18,6 +18,12 @@ it("navegação tem cinco destinos, página atual e atalho de teclado para conte
   expect(document.querySelector("#central-content")).toHaveAttribute("tabindex", "-1");
   expect(screen.getByText("proprietario@example.test")).toBeVisible(); expect(screen.getByText("Conta proprietária")).toBeVisible();
   expect(screen.queryByRole("link", { name: "proprietario@example.test" })).toBeNull();
+  const sidebar = document.querySelector(".central-sidebar")!;
+  expect(within(sidebar as HTMLElement).getByText("Locadora com nome extenso")).toHaveClass("central-tenant-name");
+  expect(within(sidebar as HTMLElement).getByText("Central da locadora")).toHaveClass("central-context-label");
+  expect(within(sidebar as HTMLElement).getByText(/Plataforma por/)).toBeVisible();
+  expect(sidebar.firstElementChild).toHaveClass("central-tenant");
+  expect(sidebar.lastElementChild).toHaveClass("central-sidebar-footer");
 });
 it("atribuição pública é discreta e placeholder continua honesto, sem imagem fictícia", () => {
   render(<><ImproveBrand subtle /><VehiclePlaceholder /></>);
@@ -26,7 +32,7 @@ it("atribuição pública é discreta e placeholder continua honesto, sem imagem
 it("tabela mantém semântica e região rolável acessível pelo teclado", () => {
   render(<InterestedLeads leads={[{ id: "synthetic", full_name: "Pessoa sintética", phone: "11999990000", email: "contato.muito.longo@example.test", city: "Cidade sintética", created_at: "2026-09-15T12:00:00Z", preferred_contact_time: null, status: "new", vehicles: null }]} />);
   expect(screen.getByRole("region")).toHaveAttribute("tabindex", "0"); expect(screen.getAllByRole("columnheader")).toHaveLength(7);
-  expect(screen.getByText("Novo")).toBeVisible(); expect(screen.queryByRole("link")).toBeNull();
+  expect(screen.getByText("Novo")).toHaveClass("status-badge", "is-new"); expect(screen.queryByRole("link")).toBeNull();
 });
 it.each([
   { Component: InterestedLoading, label: "Carregando interessados…" },
