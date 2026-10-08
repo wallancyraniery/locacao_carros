@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { maxTurnstileTokenLength } from "../domain/turnstile_contract";
 import { usagePurposes } from "@/modules/rentals/domain/rental_terms";
 
 const trimmedText = (label: string, minimum: number, maximum: number) => z.string()
@@ -13,7 +14,7 @@ const optionalText = (maximum: number) => z.string().trim().max(maximum, `Use no
 export const leadSubmissionSchema = z.object({
   operationId: z.string().uuid("Operação de envio inválida."),
   turnstileIdempotencyKey: z.string().uuid("Tentativa de proteção inválida."),
-  turnstileToken: z.string().trim().min(1, "Confirme a proteção contra abuso.").max(2048, "Proteção contra abuso inválida."),
+  turnstileToken: z.string().trim().min(1, "Confirme a proteção contra abuso.").max(maxTurnstileTokenLength, "Proteção contra abuso inválida."),
   vehicleId: z.string().uuid("Selecione um veículo válido."),
   storefrontSlug: z.string().trim().max(63).optional(),
   fullName: trimmedText("Nome completo", 3, 120),

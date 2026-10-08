@@ -8,6 +8,7 @@ import { drizzleLeadRepository } from "../infrastructure/drizzle_lead_repository
 import { reportUnexpectedLeadSubmissionError } from "../infrastructure/lead_repository_diagnostic";
 import { turnstileSubmissionProtection } from "../infrastructure/turnstile_submission_protection.server";
 import { leadPrivacyReadiness } from "../infrastructure/privacy_readiness.server";
+import { reportTurnstileInputRejected } from "../infrastructure/turnstile_input_diagnostic.server";
 import type { LeadSubmissionInput } from "../validation/lead_submission";
 
 export async function submitLeadAction(_state: LeadFormState, formData: FormData): Promise<LeadFormState> {
@@ -29,6 +30,9 @@ export async function submitLeadAction(_state: LeadFormState, formData: FormData
     };
   }
   if (result.status === "privacy") return { status: "error", message: "Não foi possível enviar seu interesse agora. Tente novamente mais tarde.", values: formValues };
+  if (result.status === "invalid" && result.errors.turnstileToken) {
+    reportTurnstileInputRejected(formData.get("turnstileToken"));
+  }
   if (result.status === "blocked" || result.errors.turnstileToken) {
     return {
       status: "error",

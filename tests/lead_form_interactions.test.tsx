@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const { submitLeadAction } = vi.hoisted(() => ({
@@ -19,7 +19,7 @@ vi.mock("@/modules/leads/actions/submit_lead_action", () => ({ submitLeadAction 
 
 import { LeadForm } from "@/modules/leads/components/lead_form";
 
-afterEach(cleanup);
+afterEach(() => { cleanup(); Reflect.deleteProperty(window, "turnstile"); vi.restoreAllMocks(); });
 
 beforeEach(() => {
   submitLeadAction.mockReset().mockImplementation(async (_state: unknown, formData: FormData) => ({
@@ -82,44 +82,122 @@ describe("interações do formulário de interesse", () => {
     expect(screen.getByLabelText(/E-mail/)).toHaveValue("pessoa@example.test");
   });
 
-  it("preserva a operação e renova token e chave de Siteverify após rejeição definitiva", async () => {
+  it("controla token, readiness, FormData e renovação após rejeição", async () => {
+    const logs = ["log", "warn", "error", "info", "debug"].map((method) =>
+      vi.spyOn(console, method as "log").mockImplementation(() => {}));
     const renderWidget = vi.fn().mockReturnValue("widget-1");
-    const resetWidget = vi.fn();
+    const resetWidget = vi.fn(() => {
+      expect(document.querySelector('input[name="turnstileToken"]')).toHaveValue("");
+    });
     const removeWidget = vi.fn();
     Object.assign(window, { turnstile: { render: renderWidget, reset: resetWidget, remove: removeWidget } });
-    submitLeadAction.mockResolvedValueOnce({
-      status: "error",
-      message: "Não foi possível validar a proteção contra abuso. Tente novamente.",
-      turnstileResetId: "60000000-0000-4000-8000-000000000001",
+    submitLeadAction
+      .mockResolvedValueOnce({ status: "error", message: "Proteção recusada", turnstileResetId: "reset-1" })
+      .mockResolvedValueOnce({ status: "error", message: "Revise outro campo" });
+    const props = {
+      vehicleId: "20000000-0000-4000-8000-000000000001", vehicleName: "Veículo sintético",
+      operationId: "40000000-0000-4000-8000-000000000002",
+      turnstileIdempotencyKey: "50000000-0000-4000-8000-000000000002",
+      turnstile: { mode: "cloudflare" as const, siteKey: "site-key-publica" },
+    };
+    const { container, rerender, unmount } = render(<LeadForm {...props} />);
+    expect(renderWidget).toHaveBeenCalledExactlyOnceWith(expect.any(HTMLElement), {
+      sitekey: "site-key-publica", action: "submit_lead", "response-field": false,
+      "refresh-expired": "auto", "refresh-timeout": "auto",
+      callback: expect.any(Function), "expired-callback": expect.any(Function),
+      "error-callback": expect.any(Function), "timeout-callback": expect.any(Function),
     });
-    const { container, unmount } = render(<LeadForm
-      vehicleId="20000000-0000-4000-8000-000000000001"
-      vehicleName="Veículo sintético"
-      operationId="40000000-0000-4000-8000-000000000002"
-      turnstileIdempotencyKey="50000000-0000-4000-8000-000000000002"
-      turnstile={{ mode: "cloudflare", siteKey: "site-key-publica" }}
-    />);
-    expect(renderWidget).toHaveBeenCalledWith(expect.any(HTMLElement), {
-      sitekey: "site-key-publica",
-      action: "submit_lead",
-      responseField: true,
-      responseFieldName: "turnstileToken",
-      refreshExpired: "auto",
-      refreshTimeout: "auto",
-      callback: expect.any(Function),
-    });
-    const widgetOptions = renderWidget.mock.calls[0][1];
-    const initialValidationKey = container.querySelector<HTMLInputElement>('input[name="turnstileIdempotencyKey"]')?.value;
-    expect(initialValidationKey).toBe("50000000-0000-4000-8000-000000000002");
-    fireEvent.click(container.querySelector<HTMLButtonElement>('button[data-intent="submit-interest"]')!);
-    await waitFor(() => expect(resetWidget).toHaveBeenCalledWith("widget-1"));
-    expect(container.querySelector<HTMLInputElement>('input[name="operationId"]')?.value).toBe("40000000-0000-4000-8000-000000000002");
-    widgetOptions.callback();
-    await waitFor(() => expect(container.querySelector<HTMLInputElement>('input[name="turnstileIdempotencyKey"]')?.value).not.toBe(initialValidationKey));
-    expect(container.innerHTML).not.toContain("TURNSTILE_SECRET_KEY");
+    const options = renderWidget.mock.calls[0][1];
+    const button = screen.getByRole("button", { name: "Enviar interesse" });
+    const tokenInput = container.querySelector<HTMLInputElement>('input[name="turnstileToken"]')!;
+    const keyInput = container.querySelector<HTMLInputElement>('input[name="turnstileIdempotencyKey"]')!;
+    expect(container.querySelectorAll('input[name="turnstileToken"]')).toHaveLength(1);
+    expect(tokenInput).toHaveValue("");
+    expect(button).toBeDisabled();
+    fireEvent.click(button);
+    fireEvent.submit(container.querySelector("form")!);
+    expect(submitLeadAction).not.toHaveBeenCalled();
+    act(() => options.callback("synthetic-token-first"));
+    expect(tokenInput).toHaveValue("synthetic-token-first");
+    expect(button).toBeEnabled();
+    const firstKey = keyInput.value;
+    expect(firstKey).not.toBe(props.turnstileIdempotencyKey);
+    act(() => options.callback("synthetic-token-first"));
+    expect(keyInput).toHaveValue(firstKey);
+    rerender(<LeadForm {...props} turnstile={{ ...props.turnstile }} />);
+    expect(renderWidget).toHaveBeenCalledTimes(1);
+    fireEvent.click(button);
+    await screen.findByText("Proteção recusada");
+    expect(submitLeadAction.mock.calls[0][1].get("turnstileToken")).toBe("synthetic-token-first");
+    expect(submitLeadAction.mock.calls[0][1].get("turnstileIdempotencyKey")).toBe(firstKey);
+    expect(resetWidget).toHaveBeenCalledExactlyOnceWith("widget-1");
+    expect(tokenInput).toHaveValue("");
+    expect(button).toBeDisabled();
+    act(() => options.callback("synthetic-token-first"));
+    expect(tokenInput).toHaveValue("");
+    expect(button).toBeDisabled();
+    fireEvent.click(button);
+    expect(submitLeadAction).toHaveBeenCalledTimes(1);
+    act(() => options.callback("synthetic-token-second"));
+    expect(tokenInput).toHaveValue("synthetic-token-second");
+    expect(button).toBeEnabled();
+    expect(keyInput.value).not.toBe(firstKey);
+    fireEvent.click(button);
+    await waitFor(() => expect(submitLeadAction).toHaveBeenCalledTimes(2));
+    expect(submitLeadAction.mock.calls[1][1].get("turnstileToken")).toBe("synthetic-token-second");
+    expect(submitLeadAction.mock.calls[1][1].get("operationId")).toBe(props.operationId);
+    await screen.findByText("Revise outro campo");
+    await waitFor(() => expect(button).toBeEnabled());
+    expect(tokenInput).toHaveValue("synthetic-token-second");
+    expect(resetWidget).toHaveBeenCalledTimes(1);
+    for (const log of logs) expect(JSON.stringify(log.mock.calls)).not.toMatch(/synthetic-token-(first|second)/);
     unmount();
     expect(removeWidget).toHaveBeenCalledWith("widget-1");
-    Reflect.deleteProperty(window, "turnstile");
+  });
+
+  it.each(["expired-callback", "error-callback", "timeout-callback"])("%s limpa o token e bloqueia envio até novo callback", async (event) => {
+    const renderWidget = vi.fn().mockReturnValue("widget-1");
+    Object.assign(window, { turnstile: { render: renderWidget, reset: vi.fn(), remove: vi.fn() } });
+    const logs = ["log", "warn", "error", "info", "debug"].map((method) => vi.spyOn(console, method as "log").mockImplementation(() => {}));
+    const { container } = render(<LeadForm vehicleId="20000000-0000-4000-8000-000000000001" vehicleName="Sintético"
+      operationId="40000000-0000-4000-8000-000000000001" turnstileIdempotencyKey="50000000-0000-4000-8000-000000000001"
+      turnstile={{ mode: "cloudflare", siteKey: "public-site" }} />);
+    const options = renderWidget.mock.calls[0][1];
+    const button = screen.getByRole("button", { name: "Enviar interesse" });
+    const tokenInput = container.querySelector('input[name="turnstileToken"]');
+    const keyInput = container.querySelector<HTMLInputElement>('input[name="turnstileIdempotencyKey"]')!;
+    act(() => options.callback("synthetic-old-token"));
+    const oldKey = keyInput.value;
+    expect(button).toBeEnabled();
+    act(() => options[event]());
+    expect(tokenInput).toHaveValue("");
+    expect(button).toBeDisabled();
+    expect(new FormData(container.querySelector("form")!).get("turnstileToken")).toBe("");
+    act(() => options.callback("synthetic-old-token"));
+    fireEvent.click(button);
+    expect(submitLeadAction).not.toHaveBeenCalled();
+    act(() => options.callback("synthetic-new-token"));
+    expect(button).toBeEnabled();
+    expect(tokenInput).toHaveValue("synthetic-new-token");
+    expect(keyInput.value).not.toBe(oldKey);
+    fireEvent.click(button);
+    await waitFor(() => expect(submitLeadAction).toHaveBeenCalledTimes(1));
+    expect(submitLeadAction.mock.calls[0][1].get("turnstileToken")).toBe("synthetic-new-token");
+    for (const log of logs) expect(JSON.stringify(log.mock.calls)).not.toMatch(/synthetic-(old|new)-token/);
+  });
+
+  it("mantém botão indisponível durante a Server Action mesmo com token", async () => {
+    let finish!: (value: { status: "error"; message: string }) => void;
+    submitLeadAction.mockImplementationOnce(() => new Promise((resolve) => { finish = resolve; }));
+    const renderWidget = vi.fn().mockReturnValue("widget-1");
+    Object.assign(window, { turnstile: { render: renderWidget, reset: vi.fn(), remove: vi.fn() } });
+    render(<LeadForm vehicleId="20000000-0000-4000-8000-000000000001" vehicleName="Sintético"
+      operationId="40000000-0000-4000-8000-000000000001" turnstileIdempotencyKey="50000000-0000-4000-8000-000000000001"
+      turnstile={{ mode: "cloudflare", siteKey: "public-site" }} />);
+    act(() => renderWidget.mock.calls[0][1].callback("synthetic-pending-token"));
+    fireEvent.click(screen.getByRole("button", { name: "Enviar interesse" }));
+    expect(await screen.findByRole("button", { name: "Enviando..." })).toBeDisabled();
+    await act(async () => { finish({ status: "error", message: "Erro técnico sintético" }); });
   });
 });
 

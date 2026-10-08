@@ -52,9 +52,10 @@ function formDataFromValidInput() {
 }
 
 describe("envio de interesse", () => {
-  afterEach(() => vi.unstubAllEnvs());
+  afterEach(() => { vi.unstubAllEnvs(); vi.restoreAllMocks(); });
 
   beforeEach(() => {
+    vi.spyOn(console, "warn").mockImplementation(() => {});
     drizzleRepository.findAvailableDemoVehicle.mockReset().mockResolvedValue({
       id: validInput.vehicleId,
       organizationId: "10000000-0000-4000-8000-000000000001",
@@ -243,6 +244,45 @@ describe("envio de interesse", () => {
     await expect(submitLead(adapter, verifier, { ...validInput, ...change })).resolves.toMatchObject({ status: "invalid" });
     expect(verifier.verify).not.toHaveBeenCalled();
     expect(adapter.createLead).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    ["missing", "missing", false],
+    ["empty", "empty", true],
+    ["whitespace", "empty", true],
+    ["too_long", "too_long", true],
+    ["file", "invalid", true],
+  ])("diagnostica rejeição pré-Siteverify: %s", async (inputCase, tokenState, tokenPresent) => {
+    const form = formDataFromValidInput();
+    if (inputCase === "missing") form.delete("turnstileToken");
+    else if (inputCase === "file") form.set("turnstileToken", new File(["private-file-content"], "private-filename"));
+    else form.set("turnstileToken", inputCase === "too_long" ? "private-token-".repeat(200) : inputCase === "whitespace" ? "   " : "");
+    const result = await submitLeadAction({ status: "idle" }, form);
+    expect(result).toMatchObject({ status: "error", message: "Não foi possível validar a proteção contra abuso. Tente novamente." });
+    expect(result.turnstileResetId).toBeTruthy();
+    expect(result.values).not.toHaveProperty("turnstileToken");
+    expect(console.warn).toHaveBeenCalledExactlyOnceWith({ event: "lead_turnstile_input_rejected", tokenPresent, tokenState });
+    const diagnostic = JSON.stringify(vi.mocked(console.warn).mock.calls);
+    for (const value of [validInput.turnstileToken, validInput.operationId, validInput.turnstileIdempotencyKey,
+      validInput.vehicleId, validInput.fullName, validInput.phone, validInput.email, validInput.city,
+      "private-token-", "private-file-content", "private-filename"]) expect(diagnostic).not.toContain(value);
+    expect(turnstileProtection.verify).not.toHaveBeenCalled();
+    expect(drizzleRepository.findAvailableDemoVehicle).not.toHaveBeenCalled();
+    expect(drizzleRepository.createLead).not.toHaveBeenCalled();
+  });
+
+  it("envia token válido à proteção sem diagnóstico pré-Siteverify", async () => {
+    await submitLeadAction({ status: "idle" }, formDataFromValidInput());
+    expect(turnstileProtection.verify).toHaveBeenCalledExactlyOnceWith({ token: validInput.turnstileToken,
+      operationId: validInput.operationId, idempotencyKey: validInput.turnstileIdempotencyKey });
+    expect(console.warn).not.toHaveBeenCalled();
+  });
+
+  it("não confunde rejeição Siteverify com rejeição de entrada", async () => {
+    turnstileProtection.verify.mockResolvedValueOnce(false);
+    await submitLeadAction({ status: "idle" }, formDataFromValidInput());
+    expect(console.warn).not.toHaveBeenCalled();
+    expect(drizzleRepository.createLead).not.toHaveBeenCalled();
   });
 
   it("traduz token ausente em mensagem pública segura", async () => {
