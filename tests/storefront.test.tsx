@@ -32,7 +32,8 @@ it("renderiza frota real sem imagem, login ou condições inventadas", async () 
   for (const text of ["Cidade A", "Marca Modelo", "Versão", "2024", "Prata", "Sem foto"]) expect(screen.getByText(text)).toBeVisible();
   expect(screen.getByText(/700,50/)).toBeVisible(); expect(screen.queryByRole("img")).toBeNull();
   expect(screen.queryByRole("button")).toBeNull(); expect(screen.queryByText(/caução|entrada|documentação/i)).toBeNull();
-  expect(screen.getByText(/Solicitações por esta página ainda não estão disponíveis/)).toBeVisible();
+  expect(screen.getByText(/No detalhe, você pode manifestar interesse/)).toBeVisible();
+  expect(screen.getByRole("link", { name: /Explorar veículos/ })).toHaveAttribute("href", "#frota");
   expect(screen.queryByRole("link", { name: "Início" })).toBeNull();
   expect(screen.getByText("Frota")).toHaveAttribute("aria-current", "page");
   expect(screen.queryByRole("navigation", { name: "Pré-visualização da Central" })).toBeNull();
@@ -78,6 +79,6 @@ it("home separa jornadas sem exigir conta de locatário ou inventar descoberta",
   expect(screen.getByRole("link", { name: "Sou locadora" })).toHaveAttribute("href", "/admin/login");
   expect(screen.getByRole("link", { name: "Quero alugar" })).toHaveAttribute("href", "#alugar");
   expect(screen.getByText(/A busca entre várias locadoras ainda não/)).toBeVisible();
-  expect(screen.getByText(/Nas vitrines reais, você pode consultar a frota; solicitações ainda não estão disponíveis/)).toBeVisible();
+  expect(screen.getByText(/Nas vitrines publicadas, você pode consultar a frota e manifestar interesse/)).toBeVisible();
   expect(screen.getByText(/a gestão de reservas ainda não está disponível/)).toBeVisible();
 });

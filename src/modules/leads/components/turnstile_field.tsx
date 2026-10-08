@@ -11,6 +11,7 @@ type TurnstileWidgetConfiguration =
 type TurnstileApi = {
   render(container: HTMLElement, options: {
     sitekey: string;
+    size: "compact";
     action: string;
     "response-field": false;
     "refresh-expired": "auto";
@@ -52,6 +53,7 @@ export function TurnstileField({ configuration, idempotencyKey: initialIdempoten
     if (mode !== "cloudflare" || !siteKey || !container.current || widgetId.current) return;
     widgetId.current = turnstileApi()?.render(container.current, {
       sitekey: siteKey,
+      size: "compact",
       action: "submit_lead",
       "response-field": false,
       "refresh-expired": "auto",

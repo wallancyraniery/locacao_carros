@@ -56,6 +56,8 @@ it("não aceita campos extras ou contexto fornecido pelo browser", async () => {
 });
 it("formulário storefront usa somente privacidade da locadora", async () => {
   render(await InterestPage({ searchParams: Promise.resolve({ storefront: slug, vehicle: vehicleId }) }));
+  expect(screen.getByText("Marca Modelo — 2024")).toBeVisible();
+  expect(screen.getByText("Locadora A")).toBeVisible();
   expect(screen.getByText(tenantPrivacy.controllerName)).toBeVisible();
   expect(screen.getByRole("link", { name: tenantPrivacy.contactLabel })).toHaveAttribute("href", tenantPrivacy.contactHref);
   expect(screen.queryByText("Global legado")).toBeNull();

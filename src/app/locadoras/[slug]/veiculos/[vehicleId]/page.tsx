@@ -26,15 +26,10 @@ export default async function StorefrontVehiclePage({ params, searchParams }: {
   const context = previewRequested ? await loadCentralContext() : null;
   const centralPreview = context?.status === "ready" && context.organization.slug === org.slug;
   const previewSuffix = centralPreview ? "?preview=central" : "";
-  return <>
-    <header className="storefront-topbar"><Link className="storefront-nav storefront-back" href={`/locadoras/${org.slug}${previewSuffix}`}>← Voltar à frota</Link><ImproveBrand subtle /></header>
+  return <div className="tenant-storefront">
+    <header className="storefront-topbar"><div className="storefront-topbar-identity"><Link className="storefront-topbar-name" href={`/locadoras/${org.slug}${previewSuffix}`}>{org.name}</Link><Link className="storefront-nav storefront-back" href={`/locadoras/${org.slug}${previewSuffix}`}>← Voltar à frota</Link></div><ImproveBrand subtle /></header>
     {centralPreview && <nav className="storefront-preview" aria-label="Pré-visualização da Central"><span>Pré-visualização da sua vitrine</span><div><Link href="/admin">Visão geral</Link><Link href="/admin/veiculos">Veículos</Link><Link href="/admin/reservas">Reservas</Link><Link href="/admin/interessados">Interessados</Link><Link href="/admin/locadora">Minha locadora</Link></div></nav>}
     <main className="section storefront storefront-detail-page">
-      <header className="storefront-heading">
-        <p className="eyebrow">Veículo da frota</p>
-        <h1>{vehicle.brand} {vehicle.model}</h1>
-        <p className="storefront-city">{org.name}{org.city ? ` · ${org.city}` : ""}</p>
-      </header>
       <div className="storefront-detail-grid">
         <section aria-label="Fotos do veículo" className="storefront-gallery">
           {vehicle.images.length > 0 ? vehicle.images.map((image, index) => <figure key={image.id}>
@@ -48,16 +43,19 @@ export default async function StorefrontVehiclePage({ params, searchParams }: {
             />
           </figure>) : <VehiclePlaceholder />}
         </section>
-        <aside className="storefront-detail-summary">
-          {vehicle.version && <p className="caption">{vehicle.version}</p>}
-          <dl className="vehicle-details"><div><dt>Ano</dt><dd>{vehicle.year}</dd></div><div><dt>Cor</dt><dd>{vehicle.color}</dd></div></dl>
+        <section className="storefront-detail-summary" aria-label="Detalhes do veículo">
+          <p className="eyebrow">Veículo da frota</p>
+          <h1>{vehicle.brand} {vehicle.model}</h1>
+          {vehicle.version && <p className="storefront-vehicle-version">{vehicle.version}</p>}
+          <p className="storefront-detail-location">{org.name}{org.city ? ` · ${org.city}` : ""}</p>
           <p className="price"><strong>{formatRentalMoney(vehicle.weekly_price_cents)}</strong> <span>/ semana</span></p>
+          <dl className="vehicle-details"><div><dt>Ano</dt><dd>{vehicle.year}</dd></div><div><dt>Cor</dt><dd>{vehicle.color}</dd></div></dl>
           <p className="storefront-notice">O envio de interesse não representa reserva, aprovação ou garantia de disponibilidade. A locadora confirmará as condições.</p>
           {centralPreview
             ? <p className="button button-disabled" aria-disabled="true">Envio de interesse desativado na pré-visualização</p>
             : <Link className="button primary" href={`/interesse?storefront=${org.slug}&vehicle=${vehicle.id}`}>Tenho interesse</Link>}
-        </aside>
+        </section>
       </div>
     </main>
-  </>;
+  </div>;
 }
