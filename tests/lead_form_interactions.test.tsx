@@ -102,7 +102,7 @@ describe("interações do formulário de interesse", () => {
     };
     const { container, rerender, unmount } = render(<LeadForm {...props} />);
     expect(renderWidget).toHaveBeenCalledExactlyOnceWith(expect.any(HTMLElement), {
-      sitekey: "site-key-publica", action: "submit_lead", "response-field": false,
+      sitekey: "site-key-publica", size: "compact", action: "submit_lead", "response-field": false,
       "refresh-expired": "auto", "refresh-timeout": "auto",
       callback: expect.any(Function), "expired-callback": expect.any(Function),
       "error-callback": expect.any(Function), "timeout-callback": expect.any(Function),
@@ -130,7 +130,7 @@ describe("interações do formulário de interesse", () => {
     await screen.findByText("Proteção recusada");
     expect(submitLeadAction.mock.calls[0][1].get("turnstileToken")).toBe("synthetic-token-first");
     expect(submitLeadAction.mock.calls[0][1].get("turnstileIdempotencyKey")).toBe(firstKey);
-    expect(resetWidget).toHaveBeenCalledExactlyOnceWith("widget-1");
+    await waitFor(() => expect(resetWidget).toHaveBeenCalledExactlyOnceWith("widget-1"));
     expect(tokenInput).toHaveValue("");
     expect(button).toBeDisabled();
     act(() => options.callback("synthetic-token-first"));

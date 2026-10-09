@@ -47,6 +47,8 @@ it("detalhe público oferece retorno à frota no slug correto sem CTA inexistent
   mocks.rpc.mockResolvedValue({ data: { ...organization, vehicle }, error: null });
   render(await VehiclePage({ params: Promise.resolve({ slug: organization.slug, vehicleId: id }), searchParams: Promise.resolve({}) }));
   expect(screen.queryByRole("link", { name: "Início" })).toBeNull();
+  expect(screen.getByRole("region", { name: "Fotos do veículo" })).toBeVisible();
+  expect(screen.getByRole("region", { name: "Detalhes do veículo" })).toBeVisible();
   expect(screen.getByRole("link", { name: "← Voltar à frota" })).toHaveAttribute("href", `/locadoras/${organization.slug}`);
   expect(screen.getByRole("link", { name: "Tenho interesse" })).toHaveAttribute("href", `/interesse?storefront=${organization.slug}&vehicle=${id}`);
 });

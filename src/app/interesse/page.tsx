@@ -24,5 +24,27 @@ export default async function InterestPage({ searchParams }: { searchParams: Pro
   const privacyNotice = storefrontPrivacy?.status === "ready" ? storefrontPrivacy.configuration : getPrivacyNoticeConfiguration();
   const returnHref = isStorefront ? `/locadoras/${storefront.storefront.slug}/veiculos/${vehicle.id}` : "/#veiculos";
   const returnLabel = isStorefront ? "Voltar ao veículo" : "Voltar aos veículos";
-  return <main className="interest-page"><Link href={returnHref} className="back-link">← {returnLabel}</Link><div className="interest-layout"><section><p className="eyebrow">Manifestação de interesse</p><h1>Vamos conhecer você</h1><p className="lead-dark">Preencha somente os dados iniciais para que a locadora possa analisar seu interesse.</p><aside className="interest-terms" aria-labelledby="interest-terms-title"><h2 id="interest-terms-title">Condições principais</h2>{isStorefront ? <ul><li>{formatRentalMoney(storefront.storefront.vehicle.weekly_price_cents)} por semana</li><li>Condições e disponibilidade serão confirmadas pela locadora.</li></ul> : <ul><li>{formatRentalMoney(rentalTerms.weeklyRentalCents)} por semana</li><li>Caução de {formatRentalMoney(rentalTerms.securityDepositCents)}</li><li>Valor inicial de {formatRentalMoney(rentalTerms.initialTotalCents)}</li><li>Pix ou cartão; caução em até {rentalTerms.securityDepositMaxInstallments} vezes sem juros</li><li>Devolução da caução em até {rentalTerms.securityDepositRefundMaxDays} dias após encerramento e vistoria</li></ul>}</aside><div className="form-warning"><strong>Importante</strong><p>O envio não representa reserva, aprovação ou garantia de disponibilidade.</p></div><PrivacyNotice configuration={privacyNotice} /></section><LeadForm vehicleId={vehicle.id} vehicleName={`${"brand" in vehicle ? `${vehicle.brand} ` : ""}${vehicle.model} — ${vehicle.year ?? "ano a confirmar"}`} operationId={randomUUID()} turnstileIdempotencyKey={randomUUID()} turnstile={getTurnstileWidgetConfiguration()} storefrontSlug={isStorefront ? storefront.storefront.slug : undefined} returnHref={returnHref} returnLabel={returnLabel} /></div></main>;
+  const selectedVehicleName = `${"brand" in vehicle ? `${vehicle.brand} ` : ""}${vehicle.model} — ${vehicle.year ?? "ano a confirmar"}`;
+  return <main className="interest-page">
+    <div className="interest-page-inner">
+      <Link href={returnHref} className="back-link">← {returnLabel}</Link>
+      <div className="interest-layout">
+        <section className="interest-story">
+          <header className="interest-intro">
+            <p className="eyebrow">Manifestação de interesse</p>
+            <h1>Vamos conhecer você</h1>
+            <p className="lead-dark">Preencha somente os dados iniciais para que a locadora possa analisar seu interesse.</p>
+            <p className="interest-context"><span>Veículo selecionado</span><strong>{selectedVehicleName}</strong>{isStorefront && <span>{storefront.storefront.name}</span>}</p>
+          </header>
+          <aside className="interest-terms" aria-labelledby="interest-terms-title">
+            <h2 id="interest-terms-title">Condições principais</h2>
+            {isStorefront ? <ul><li>{formatRentalMoney(storefront.storefront.vehicle.weekly_price_cents)} por semana</li><li>Condições e disponibilidade serão confirmadas pela locadora.</li></ul> : <ul><li>{formatRentalMoney(rentalTerms.weeklyRentalCents)} por semana</li><li>Caução de {formatRentalMoney(rentalTerms.securityDepositCents)}</li><li>Valor inicial de {formatRentalMoney(rentalTerms.initialTotalCents)}</li><li>Pix ou cartão; caução em até {rentalTerms.securityDepositMaxInstallments} vezes sem juros</li><li>Devolução da caução em até {rentalTerms.securityDepositRefundMaxDays} dias após encerramento e vistoria</li></ul>}
+          </aside>
+          <div className="form-warning"><strong>Importante</strong><p>O envio não representa reserva, aprovação ou garantia de disponibilidade.</p></div>
+          <PrivacyNotice configuration={privacyNotice} />
+        </section>
+        <LeadForm vehicleId={vehicle.id} vehicleName={selectedVehicleName} operationId={randomUUID()} turnstileIdempotencyKey={randomUUID()} turnstile={getTurnstileWidgetConfiguration()} storefrontSlug={isStorefront ? storefront.storefront.slug : undefined} returnHref={returnHref} returnLabel={returnLabel} />
+      </div>
+    </div>
+  </main>;
 }

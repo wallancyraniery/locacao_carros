@@ -52,7 +52,7 @@ export function HomePage({ vehicles }: { vehicles: Vehicle[] }) {
         <div className="journey-flow">
           <div className="flow-label"><Icon name="vehicle" /><h3>Para quem aluga</h3><span className="status-badge">Fluxo demonstrativo</span></div>
           <ol>{renterSteps.map((step, index) => <li key={step}><span className="step-number" aria-hidden="true">{String(index + 1).padStart(2, "0")}</span><strong>{step}</strong></li>)}</ol>
-          <p>O envio ainda é exclusivo do catálogo demonstrativo e depende de análise da locadora. Nas vitrines reais, você pode consultar a frota; solicitações ainda não estão disponíveis.</p>
+          <p>No catálogo demonstrativo, o envio depende de análise da locadora. Nas vitrines publicadas, você pode consultar a frota e manifestar interesse pelo veículo diretamente na página da locadora.</p>
         </div>
         <div className="journey-flow">
           <div className="flow-label"><Icon name="building" /><h3>Para sua locadora</h3><span className="status-badge">Disponível na Central</span></div>
